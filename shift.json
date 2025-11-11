@@ -1,0 +1,195 @@
+{
+  "app_id": "shift",
+  "app_name": "Shift",
+  "app_description": "Sistema de registro de jornada laboral conforme a la legislación española",
+  "version": "1.0.0",
+  "author": "Placenet",
+
+  "config": {
+    "base_url": "http://localhost:5173",
+    "api_base": "/api",
+
+    "jwt": {
+      "algorithm": "RS256",
+      "kid": "ACC01",
+      "expiration": 28800,
+      "secret": "your-secret-key-change-in-production"
+    },
+
+    "database": {
+      "type": "sqlite",
+      "path": "./data/control_horario.db"
+    }
+  },
+
+  "roles": {
+    "worker": {
+      "name": "Trabajador",
+      "description": "Usuario que puede fichar y ver su historial",
+      "permissions": [
+        "time.clock.in",
+        "time.clock.out",
+        "time.clock.pause",
+        "time.events.view_own",
+        "time.status.view_own"
+      ],
+      "routes": [
+        "/",
+        "/history"
+      ]
+    },
+    "admin": {
+      "name": "Administrador",
+      "description": "Usuario con acceso completo al sistema",
+      "permissions": [
+        "time.clock.*",
+        "time.events.*",
+        "time.status.*",
+        "admin.events.view_all",
+        "admin.export",
+        "admin.users.view",
+        "admin.audit.view"
+      ],
+      "routes": [
+        "/",
+        "/history",
+        "/admin"
+      ]
+    }
+  },
+
+  "endpoints": {
+    "auth": {
+      "login": {
+        "path": "/api/auth/login",
+        "method": "POST",
+        "public": true,
+        "description": "Login de desarrollo/testing"
+      }
+    },
+    "time": {
+      "clock": {
+        "path": "/api/time/clock",
+        "method": "POST",
+        "auth_required": true,
+        "description": "Fichar entrada/salida/pausa"
+      },
+      "status": {
+        "path": "/api/time/status",
+        "method": "GET",
+        "auth_required": true,
+        "description": "Estado actual del fichaje"
+      },
+      "events": {
+        "path": "/api/time/events",
+        "method": "GET",
+        "auth_required": true,
+        "description": "Historial de fichajes del usuario"
+      }
+    },
+    "admin": {
+      "events": {
+        "path": "/api/admin/events",
+        "method": "GET",
+        "auth_required": true,
+        "role_required": "admin",
+        "description": "Ver todos los eventos"
+      },
+      "export": {
+        "path": "/api/admin/export",
+        "method": "GET",
+        "auth_required": true,
+        "role_required": "admin",
+        "description": "Exportar registros en CSV/JSON"
+      },
+      "users": {
+        "path": "/api/admin/users",
+        "method": "GET",
+        "auth_required": true,
+        "role_required": "admin",
+        "description": "Listar usuarios"
+      }
+    }
+  },
+
+  "integration": {
+    "placenet": {
+      "enabled": true,
+      "jwt_mapping": {
+        "avatar_id": "userId",
+        "avatar_name": "name",
+        "avatar_email": "email",
+        "domain_id": "companyId",
+        "domain_name": "companyName",
+        "role": "role"
+      },
+      "default_role": "worker",
+      "admin_tags": ["admin", "shift_admin"],
+      "webhook_url": null
+    }
+  },
+
+  "features": {
+    "immutable_records": true,
+    "audit_logging": true,
+    "data_export": true,
+    "rgpd_compliance": true,
+    "legal_compliance": {
+      "rd_8_2019": true,
+      "retention_years": 4
+    }
+  },
+
+  "ui": {
+    "theme": {
+      "primary_color": "#2563eb",
+      "success_color": "#16a34a",
+      "warning_color": "#ea580c",
+      "danger_color": "#dc2626"
+    },
+    "language": "es",
+    "date_format": "DD/MM/YYYY",
+    "time_format": "HH:mm:ss"
+  },
+
+  "testing": {
+    "enabled": true,
+    "test_users": [
+      {
+        "id": "test_worker",
+        "email": "worker@test.com",
+        "name": "Trabajador Test",
+        "role": "worker",
+        "avatar_id": "TESTU1",
+        "domain_id": "DXX1",
+        "domain_name": "Empresa Test"
+      },
+      {
+        "id": "test_admin",
+        "email": "admin@test.com",
+        "name": "Admin Test",
+        "role": "admin",
+        "avatar_id": "TESTA1",
+        "domain_id": "DXX1",
+        "domain_name": "Empresa Test"
+      }
+    ]
+  },
+
+  "legal": {
+    "company_name": "Tu Empresa S.L.",
+    "data_controller": "Responsable de Protección de Datos",
+    "contact_email": "dpo@tuempresa.com",
+    "privacy_policy_url": "/legal/privacy",
+    "terms_url": "/legal/terms",
+    "compliance_docs": "/LEGAL_COMPLIANCE.md"
+  },
+
+  "monitoring": {
+    "audit_log_retention_days": 1825,
+    "max_failed_login_attempts": 5,
+    "session_timeout_minutes": 480,
+    "enable_ip_logging": true,
+    "enable_user_agent_logging": true
+  }
+}
