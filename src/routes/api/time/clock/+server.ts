@@ -1,6 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { queries } from '$lib/server/db';
-import { getUserFromRequest, requireAuth, getClientIP } from '$lib/server/auth';
+import { requireAuth, getClientIP } from '$lib/server/auth';
 
 /**
  * POST /api/time/clock
@@ -10,15 +10,11 @@ import { getUserFromRequest, requireAuth, getClientIP } from '$lib/server/auth';
  *   event_type: 'in' | 'out' | 'pause_start' | 'pause_end'
  * }
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
-		// Authenticate user
-		const user = await getUserFromRequest(request);
+		// User is authenticated by hooks.server.ts
+		const user = locals.user;
 		requireAuth(user);
-
-		if (!user) {
-			return json({ error: 'Unauthorized' }, { status: 401 });
-		}
 
 		// Parse request body
 		const body = await request.json();

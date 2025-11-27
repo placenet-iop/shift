@@ -1,59 +1,59 @@
-# Integración con AppDev
+# Integration with AppDev
 
-## ✅ Configuración Completada
+## ✅ Configuration Completed
 
-Shift ya está configurado para recibir tokens JWT de AppDev. Los cambios realizados:
+Shift is now configured to receive JWT tokens from AppDev. The changes made:
 
-1. **JWKS Support**: Shift ahora obtiene las claves públicas dinámicamente desde el endpoint JWKS de Placenet
-2. **JWT RS256 Support**: Verifica tokens firmados con RS256 usando las claves del JWKS endpoint
-3. **postMessage Listener**: Escucha mensajes del formato AppDev `{ type: 'auth', token: '...', goto: '...' }`
-4. **READY Protocol**: Envía `READY` a AppDev cuando la app carga
-5. **Auto-provisioning**: Crea usuarios automáticamente desde los datos del token JWT
+1. **JWKS Support**: Shift now dynamically obtains public keys from Placenet's JWKS endpoint
+2. **JWT RS256 Support**: Verifies tokens signed with RS256 using keys from the JWKS endpoint
+3. **postMessage Listener**: Listens for AppDev format messages `{ type: 'auth', token: '...', goto: '...' }`
+4. **READY Protocol**: Sends `READY` to AppDev when the app loads
+5. **Auto-provisioning**: Automatically creates users from JWT token data
 
-## 🚀 Cómo Usar
+## 🚀 How to Use
 
-### Paso 1: Asegurar que ambos servidores estén corriendo
+### Step 1: Ensure both servers are running
 
-**Shift** (este proyecto):
+**Shift** (this project):
 ```bash
 cd /Users/maximestebancalvo/shift
 npm run dev
-# Debe estar en: http://localhost:5173
+# Should be at: http://localhost:5173
 ```
 
-**AppDev** (proyecto parent):
+**AppDev** (parent project):
 ```bash
 cd /Volumes/Untitled/VS_CODE/Projects/appdev
 npm run dev
-# Probablemente en: http://localhost:5174 o similar
+# Probably at: http://localhost:5174 or similar
 ```
 
-### Paso 2: Acceder a Shift desde AppDev
+### Step 2: Access Shift from AppDev
 
-1. Abre tu navegador en la URL de AppDev (ej: `http://localhost:5174`)
-2. Verás una lista de apps disponibles
-3. Haz clic en **"shift"**
-4. Verás la interfaz de Shift cargada en un iframe
+1. Open your browser at the AppDev URL (e.g., `http://localhost:5174`)
+2. You'll see a list of available apps
+3. Click on **"shift"**
+4. You'll see the Shift interface loaded in an iframe
 
-### Paso 3: Autenticar con los botones de usuario
+### Step 3: Authenticate with user buttons
 
-AppDev mostrará botones para los usuarios configurados en `apps/shift.json`:
+AppDev will show buttons for users configured in `apps/shift.json`:
 
-- **WORKER1@EmpresaA** - Trabajador normal
-- **WORKER2@EmpresaA** - Otro trabajador
-- **ADMIN1@EmpresaA** - Administrador con acceso completo
-- **PORTER1@EdificioB** - Portero
-- **SUPERADMIN@Placenet** - Super administrador
+- **WORKER1@EmpresaA** - Regular worker
+- **WORKER2@EmpresaA** - Another worker
+- **ADMIN1@EmpresaA** - Administrator with full access
+- **PORTER1@EdificioB** - Porter
+- **SUPERADMIN@Placenet** - Super administrator
 
-Al hacer clic en cualquier botón:
-1. AppDev genera un token JWT firmado con RS256
-2. Envía el token a Shift vía `postMessage`
-3. Shift lo recibe, verifica y auto-crea el usuario
-4. El usuario queda autenticado y puede fichar
+When clicking any button:
+1. AppDev generates an RS256-signed JWT token
+2. Sends the token to Shift via `postMessage`
+3. Shift receives it, verifies and auto-creates the user
+4. The user is authenticated and can clock in/out
 
-## 📋 Usuarios Configurados
+## 📋 Configured Users
 
-En `/Volumes/Untitled/VS_CODE/Projects/appdev/apps/shift.json`:
+In `/Volumes/Untitled/VS_CODE/Projects/appdev/apps/shift.json`:
 
 ```json
 {
@@ -67,70 +67,70 @@ En `/Volumes/Untitled/VS_CODE/Projects/appdev/apps/shift.json`:
 }
 ```
 
-- **`role: "worker"`**: Puede fichar y ver su historial
-- **`role: "admin"`**: Puede fichar, ver historial, acceder a `/admin`, exportar datos
-- **`domain_tags: ["admin"]`**: También otorga permisos de admin
+- **`role: "worker"`**: Can clock in/out and view their history
+- **`role: "admin"`**: Can clock in/out, view history, access `/admin`, export data
+- **`domain_tags: ["admin"]`**: Also grants admin permissions
 
-## 🔧 Variables de Entorno
+## 🔧 Environment Variables
 
-El archivo `.env` ya está configurado con:
+The `.env` file is already configured with:
 
 ```bash
-# JWT Secret para tokens HS256 (desarrollo local)
+# JWT Secret for HS256 tokens (local development)
 JWT_SECRET=dev-secret-key-for-testing
 
-# JWKS Endpoint para obtener las claves públicas de AppDev
+# JWKS Endpoint to obtain public keys from AppDev
 JWKS_ENDPOINT=https://dev-placenet.fra1.cdn.digitaloceanspaces.com/dev-jwks.json
 ```
 
 ## 🔍 Debugging
 
-### Ver mensajes en la consola
+### View messages in console
 
-Abre las DevTools del navegador y verás:
+Open the browser DevTools and you'll see:
 
-**En AppDev (parent window)**:
+**In AppDev (parent window)**:
 ```
 [AppDev] >> { type: 'auth', token: '...', goto: '/' }
 [AppDev] << READY
 ```
 
-**En Shift (iframe)**:
+**In Shift (iframe)**:
 ```
 [Shift] Received message: { type: 'auth', token: '...' }
 [Shift] Token received from AppDev
 ```
 
-### Verificar el token
+### Verify the token
 
-En la consola de Shift (iframe):
+In the Shift console (iframe):
 ```javascript
-// Ver token guardado
+// View stored token
 localStorage.getItem('token')
 
-// Decodificar token (sin verificación)
+// Decode token (without verification)
 JSON.parse(atob(localStorage.getItem('token').split('.')[1]))
 ```
 
-### Testear manualmente
+### Manual testing
 
-Si quieres probar sin AppDev:
+If you want to test without AppDev:
 
 ```javascript
-// En la consola de Shift
-localStorage.setItem('token', 'TU_TOKEN_AQUI');
+// In the Shift console
+localStorage.setItem('token', 'YOUR_TOKEN_HERE');
 location.reload();
 ```
 
-O usa el endpoint de desarrollo:
+Or use the development endpoint:
 ```
 http://localhost:5173/dev
 ```
 
-## 🎯 Flujo Completo
+## 🎯 Complete Flow
 
-1. **Usuario hace clic en botón** en AppDev
-2. **AppDev genera token JWT**:
+1. **User clicks button** in AppDev
+2. **AppDev generates JWT token**:
    ```javascript
    POST /api/jwt
    {
@@ -142,7 +142,7 @@ http://localhost:5173/dev
      "role": "worker"
    }
    ```
-3. **AppDev envía mensaje** al iframe:
+3. **AppDev sends message** to iframe:
    ```javascript
    iframe.contentWindow.postMessage({
      type: 'auth',
@@ -150,71 +150,71 @@ http://localhost:5173/dev
      goto: '/'
    }, '*');
    ```
-4. **Shift recibe mensaje**:
-   - Guarda token en `localStorage`
-   - Envía `READY` de vuelta
-   - Verifica token usando la clave pública RS256
-   - Normaliza datos de Placenet a formato Shift
-   - Auto-crea usuario si no existe
-   - Carga estado de fichaje
-5. **Usuario puede fichar inmediatamente**
+4. **Shift receives message**:
+   - Stores token in `localStorage`
+   - Sends `READY` back
+   - Verifies token using RS256 public key
+   - Normalizes Placenet data to Shift format
+   - Auto-creates user if it doesn't exist
+   - Loads clock status
+5. **User can clock in immediately**
 
-## 🔐 Seguridad
+## 🔐 Security
 
-### Verificación de Tokens
+### Token Verification
 
-Shift verifica tokens RS256 usando:
-- **JWKS Endpoint**: Obtiene las claves públicas dinámicamente desde `https://dev-placenet.fra1.cdn.digitaloceanspaces.com/dev-jwks.json`
-- **kid header**: Identifica qué clave usar del JWKS (ej: `DEV_SVC01`)
-- **Algoritmo**: RS256 (firma asimétrica)
-- **Cache**: Las claves se cachean en memoria para mejor rendimiento
+Shift verifies RS256 tokens using:
+- **JWKS Endpoint**: Dynamically obtains public keys from `https://dev-placenet.fra1.cdn.digitaloceanspaces.com/dev-jwks.json`
+- **kid header**: Identifies which key to use from JWKS (e.g., `DEV_SVC01`)
+- **Algorithm**: RS256 (asymmetric signature)
+- **Cache**: Keys are cached in memory for better performance
 
-### Auto-provisioning Seguro
+### Secure Auto-provisioning
 
-Los usuarios se crean automáticamente SOLO si:
-1. El token JWT es válido (firma verificada)
-2. Contiene `avatar_email` y `avatar_name`
-3. No existe previamente con ese email
+Users are automatically created ONLY if:
+1. The JWT token is valid (signature verified)
+2. Contains `avatar_email` and `avatar_name`
+3. Doesn't already exist with that email
 
 ### Roles
 
-- Los roles se determinan por `domain_tags` en el token
-- Si el token incluye `domain_tags: ["admin"]` o `domain_tags: ["shift_admin"]` → rol `admin`
-- Si no → rol `worker`
+- Roles are determined by `domain_tags` in the token
+- If the token includes `domain_tags: ["admin"]` or `domain_tags: ["shift_admin"]` → `admin` role
+- Otherwise → `worker` role
 
-## 📱 Acceso Directo
+## 📱 Direct Access
 
-Si quieres acceder a Shift directamente (sin AppDev):
+If you want to access Shift directly (without AppDev):
 
 ```
 http://localhost:5173/dev
 ```
 
-Genera un token de prueba y se te redirigirá automáticamente.
+Generates a test token and redirects automatically.
 
-## ⚠️ Problemas Comunes
+## ⚠️ Common Issues
 
-### Token inválido
+### Invalid token
 
-Si ves "JWT verification failed" en la consola de Shift:
-- Verifica que `JWKS_ENDPOINT` esté configurado en `.env`
-- Asegúrate de que el JWKS endpoint esté accesible y devuelva las claves correctamente
-- Comprueba que AppDev esté firmando los tokens con una clave que esté en el JWKS
+If you see "JWT verification failed" in the Shift console:
+- Verify that `JWKS_ENDPOINT` is configured in `.env`
+- Ensure the JWKS endpoint is accessible and returns keys correctly
+- Check that AppDev is signing tokens with a key that's in the JWKS
 
-### Usuario no se crea
+### User not created
 
-Si el token es válido pero no se crea el usuario:
-- Verifica que el token incluya `avatar_email` y `avatar_name`
-- Revisa la consola del servidor de Shift para ver errores de DB
+If the token is valid but the user isn't created:
+- Verify that the token includes `avatar_email` and `avatar_name`
+- Check the Shift server console for DB errors
 
-### postMessage no funciona
+### postMessage not working
 
-Si no se recibe el token:
-- Abre DevTools en ambas ventanas (AppDev y Shift iframe)
-- Verifica que veas los mensajes `[AppDev] >>` y `[Shift] Received message`
-- Asegúrate de que Shift esté en un iframe dentro de AppDev
+If the token isn't received:
+- Open DevTools in both windows (AppDev and Shift iframe)
+- Verify you see messages `[AppDev] >>` and `[Shift] Received message`
+- Ensure Shift is in an iframe within AppDev
 
-## 📚 Archivos Relevantes
+## 📚 Relevant Files
 
 - **AppDev Config**: `/Volumes/Untitled/VS_CODE/Projects/appdev/apps/shift.json`
 - **Shift Auth**: `/Users/maximestebancalvo/shift/src/lib/server/auth.ts`
@@ -223,4 +223,4 @@ Si no se recibe el token:
 
 ---
 
-**Todo listo!** Ahora puedes acceder a Shift desde AppDev y los tokens se procesarán automáticamente.
+**Everything ready!** Now you can access Shift from AppDev and tokens will be processed automatically.

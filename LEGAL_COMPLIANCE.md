@@ -1,189 +1,189 @@
-# Control Horario - Cumplimiento Legal
+# Time Control - Legal Compliance
 
-## Base Legal
+## Legal Basis
 
-Esta aplicación de control horario cumple con la legislación española vigente:
+This time control application complies with current Spanish legislation:
 
-### Real Decreto-ley 8/2019, de 8 de marzo
-- Establece la obligación de registrar la jornada laboral diaria
-- Registro obligatorio de hora de entrada y salida
-- Conservación de registros durante 4 años
-- Accesibilidad para trabajadores e Inspección de Trabajo
+### Royal Decree-Law 8/2019, of March 8
+- Establishes the obligation to register daily working hours
+- Mandatory registration of entry and exit times
+- Records must be kept for 4 years
+- Accessibility for workers and Labor Inspection
 
-### Normativa 2026 (Preparado para)
-- Registro 100% digital
-- Sistema seguro e inalterable
-- Aplicable a todas las empresas
+### 2026 Regulations (Prepared for)
+- 100% digital registration
+- Secure and unalterable system
+- Applicable to all companies
 
-## Requisitos Legales Implementados
+## Implemented Legal Requirements
 
-### 1. Registro Diario Obligatorio ✅
-- Registro de hora exacta de inicio y fin de jornada
-- Registro de pausas durante la jornada
-- Vinculación inequívoca al trabajador mediante JWT
+### 1. Mandatory Daily Registration ✅
+- Registration of exact start and end times
+- Registration of breaks during the workday
+- Unambiguous link to the worker via JWT
 
-### 2. Fiabilidad e Inalterabilidad ✅
-- Tablas de base de datos en modo append-only
-- Triggers que previenen UPDATE y DELETE en registros
-- Imposible modificar o borrar fichajes una vez creados
-- Trazabilidad completa: usuario, timestamp, IP, user-agent
+### 2. Reliability and Immutability ✅
+- Database tables in append-only mode
+- Triggers that prevent UPDATE and DELETE on records
+- Impossible to modify or delete clock entries once created
+- Complete traceability: user, timestamp, IP, user-agent
 
-### 3. Identificación del Trabajador ✅
-- Autenticación mediante JWT (integrable con Placenet)
-- Cada fichaje vinculado inequívocamente al usuario
-- No se permite registro compartido o genérico
+### 3. Worker Identification ✅
+- Authentication via JWT (integrable with Placenet)
+- Each clock entry unambiguously linked to the user
+- Shared or generic registration not allowed
 
-### 4. Accesibilidad del Registro ✅
-- Trabajadores pueden consultar su historial en `/history`
-- Administradores pueden acceder a todos los registros en `/admin`
-- Exportación en CSV y JSON disponible
-- Sistema de búsqueda por fechas y usuario
+### 4. Record Accessibility ✅
+- Workers can consult their history at `/history`
+- Administrators can access all records at `/admin`
+- Export available in CSV and JSON
+- Search system by dates and user
 
-### 5. Conservación Mínima de Datos ✅
-- Base de datos SQLite persistente
-- Registros mantenidos indefinidamente (mínimo 4 años)
-- Sistema de backup recomendado (responsabilidad del administrador)
+### 5. Minimum Data Retention ✅
+- Persistent SQLite database
+- Records maintained indefinitely (minimum 4 years)
+- Backup system recommended (administrator's responsibility)
 
-### 6. Exportabilidad e Informes ✅
-- Exportación a CSV con formato estándar
-- Exportación a JSON para procesamiento
-- Incluye: nombre, email, fecha, hora, tipo de evento, IP, navegador
+### 6. Exportability and Reports ✅
+- Export to CSV with standard format
+- Export to JSON for processing
+- Includes: name, email, date, time, event type, IP, browser
 - Endpoint: `/api/admin/export`
 
-### 7. Adaptación a Teletrabajo ✅
-- Fichaje desde cualquier dispositivo con navegador
-- Registro de IP del cliente
-- Fuente del fichaje identificada (web/mobile/kiosk)
+### 7. Remote Work Adaptation ✅
+- Clock in/out from any device with a browser
+- Client IP registration
+- Clock source identified (web/mobile/kiosk)
 
-### 8. Cumplimiento de RGPD ✅
+### 8. GDPR Compliance ✅
 
-#### Base Jurídica
-- Artículo 6.1.c RGPD: Obligación legal del empleador
-- Tratamiento de datos personales justificado por normativa laboral
+#### Legal Basis
+- Article 6.1.c GDPR: Legal obligation of the employer
+- Processing of personal data justified by labor regulations
 
-#### Datos Registrados (Mínimos Necesarios)
-- Email del trabajador
-- Nombre del trabajador
-- Timestamps de entrada/salida/pausas
-- IP de conexión (opcional, proporcional)
-- User-agent del navegador (para auditoría)
+#### Registered Data (Minimum Necessary)
+- Worker's email
+- Worker's name
+- Entry/exit/pause timestamps
+- Connection IP (optional, proportional)
+- Browser user-agent (for auditing)
 
-#### Medidas de Seguridad
-- Autenticación mediante JWT
-- HTTPS recomendado en producción
-- Control de acceso basado en roles
-- Audit log de todas las acciones administrativas
-- Base de datos con foreign keys y constraints
+#### Security Measures
+- Authentication via JWT
+- HTTPS recommended in production
+- Role-based access control
+- Audit log of all administrative actions
+- Database with foreign keys and constraints
 
-#### Derechos ARCO
-Los trabajadores tienen derecho a:
-- **Acceso**: Ver su historial de fichajes en `/history`
-- **Rectificación**: Contactar con administrador (registros inmutables por ley)
-- **Cancelación**: Según normativa de conservación (4 años mínimo)
-- **Oposición**: Solo posible si no hay obligación legal
+#### ARCO Rights
+Workers have the right to:
+- **Access**: View their clock history at `/history`
+- **Rectification**: Contact administrator (records immutable by law)
+- **Cancellation**: According to retention regulations (4 years minimum)
+- **Opposition**: Only possible if there's no legal obligation
 
-### 9. Control de Roles y Accesos ✅
-- **worker**: Puede fichar y ver su propio historial
-- **admin**: Puede ver todos los registros, exportar y auditar
-- No se permite edición o eliminación de registros
+### 9. Role and Access Control ✅
+- **worker**: Can clock in/out and view their own history
+- **admin**: Can view all records, export and audit
+- Editing or deletion of records not allowed
 
-### 10. Disponibilidad Inmediata ✅
-- API REST disponible en todo momento
-- Exportación inmediata en CSV/JSON
-- Sin manipulación de datos
-- Audit log de todas las exportaciones
+### 10. Immediate Availability ✅
+- REST API available at all times
+- Immediate export in CSV/JSON
+- No data manipulation
+- Audit log of all exports
 
-## Auditoría y Trazabilidad
+## Audit and Traceability
 
-### Sistema de Audit Log
-Todas las acciones administrativas son registradas:
-- Visualización de registros de otros usuarios
-- Exportación de datos
-- Usuario que realizó la acción
-- Fecha y hora de la acción
-- IP desde donde se realizó
+### Audit Log System
+All administrative actions are recorded:
+- Viewing records of other users
+- Data export
+- User who performed the action
+- Date and time of the action
+- IP from where it was performed
 
-### Consulta de Audit Log
-Los administradores pueden consultar el audit log en la base de datos:
+### Audit Log Query
+Administrators can query the audit log in the database:
 ```sql
 SELECT * FROM audit_log ORDER BY ts DESC;
 ```
 
-## Documentación para Inspección de Trabajo
+## Documentation for Labor Inspection
 
-### En caso de requerimiento de la ITSS:
+### In case of ITSS request:
 
-1. **Manual de funcionamiento**: Ver README.md
-2. **Exportación de registros**: Usar `/api/admin/export`
-3. **Política de conservación**: 4 años (sin límite superior)
-4. **Responsable del tratamiento**: [NOMBRE DE LA EMPRESA]
-5. **Procedimiento ante incidencias**: Contactar con administrador del sistema
+1. **Operating manual**: See README.md
+2. **Record export**: Use `/api/admin/export`
+3. **Retention policy**: 4 years (no upper limit)
+4. **Data controller**: [COMPANY NAME]
+5. **Incident procedure**: Contact system administrator
 
-### Exportación para Inspección
+### Export for Inspection
 ```bash
-# Exportar todos los registros en CSV
+# Export all records in CSV
 curl -H "Authorization: Bearer TOKEN" \
-  "https://[DOMINIO]/api/admin/export?format=csv" > registros.csv
+  "https://[DOMAIN]/api/admin/export?format=csv" > records.csv
 
-# Exportar registros de un período específico
+# Export records from a specific period
 curl -H "Authorization: Bearer TOKEN" \
-  "https://[DOMINIO]/api/admin/export?from=2024-01-01&to=2024-12-31&format=csv" > registros_2024.csv
+  "https://[DOMAIN]/api/admin/export?from=2024-01-01&to=2024-12-31&format=csv" > records_2024.csv
 ```
 
-## Configuración de Producción
+## Production Configuration
 
-### Variables de Entorno Recomendadas
+### Recommended Environment Variables
 ```bash
-# JWT Secret (debe coincidir con Placenet)
-JWT_SECRET=tu-clave-secreta-segura
+# JWT Secret (must match Placenet)
+JWT_SECRET=your-secure-secret-key
 
-# Ruta de la base de datos
+# Database path
 DB_PATH=./data/control_horario.db
 
-# Puerto del servidor
+# Server port
 PORT=3000
 
-# Entorno
+# Environment
 NODE_ENV=production
 ```
 
-### HTTPS Obligatorio
-En producción, el sistema DEBE servirse mediante HTTPS para:
-- Proteger tokens JWT en tránsito
-- Cumplir con medidas de seguridad RGPD
-- Evitar interceptación de datos personales
+### HTTPS Mandatory
+In production, the system MUST be served via HTTPS to:
+- Protect JWT tokens in transit
+- Comply with GDPR security measures
+- Prevent interception of personal data
 
-### Backup Recomendado
+### Recommended Backup
 ```bash
-# Backup diario de la base de datos
+# Daily database backup
 cp ./data/control_horario.db ./backups/control_horario_$(date +%Y%m%d).db
 
-# Backup con compresión
+# Backup with compression
 tar -czf backup_$(date +%Y%m%d).tar.gz ./data/
 ```
 
-## Contacto y Responsabilidad
+## Contact and Responsibility
 
-**Responsable del Tratamiento**: [NOMBRE DE LA EMPRESA]
-**Delegado de Protección de Datos**: [CONTACTO]
-**Contacto**: [EMAIL]
+**Data Controller**: [COMPANY NAME]
+**Data Protection Officer**: [CONTACT]
+**Contact**: [EMAIL]
 
 ---
 
-## Garantías Técnicas de Inalterabilidad
+## Technical Guarantees of Immutability
 
-### Triggers SQL
-El sistema implementa triggers que impiden la modificación o eliminación:
+### SQL Triggers
+The system implements triggers that prevent modification or deletion:
 
 ```sql
--- Prevenir UPDATE en time_events
+-- Prevent UPDATE on time_events
 CREATE TRIGGER prevent_time_events_update
 BEFORE UPDATE ON time_events
 BEGIN
     SELECT RAISE(ABORT, 'Modification of time events is not allowed.');
 END;
 
--- Prevenir DELETE en time_events
+-- Prevent DELETE on time_events
 CREATE TRIGGER prevent_time_events_delete
 BEFORE DELETE ON time_events
 BEGIN
@@ -191,7 +191,7 @@ BEGIN
 END;
 ```
 
-Si un administrador intenta modificar registros directamente en la base de datos, la operación será rechazada con un error.
+If an administrator attempts to modify records directly in the database, the operation will be rejected with an error.
 
-## Fecha de Última Actualización
+## Last Update Date
 2024-11-10

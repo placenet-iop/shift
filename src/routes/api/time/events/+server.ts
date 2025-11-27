@@ -1,6 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { queries, getDb } from '$lib/server/db';
-import { getUserFromRequest, requireAuth } from '$lib/server/auth';
+import { requireAuth } from '$lib/server/auth';
 
 /**
  * GET /api/time/events
@@ -10,15 +10,11 @@ import { getUserFromRequest, requireAuth } from '$lib/server/auth';
  *   from: ISO-8601 date (optional)
  *   to: ISO-8601 date (optional)
  */
-export const GET: RequestHandler = async ({ request, url }) => {
+export const GET: RequestHandler = async ({ locals, url }) => {
 	try {
-		// Authenticate user
-		const user = await getUserFromRequest(request);
+		// User is authenticated by hooks.server.ts
+		const user = locals.user;
 		requireAuth(user);
-
-		if (!user) {
-			return json({ error: 'Unauthorized' }, { status: 401 });
-		}
 
 		// Get query parameters
 		const from = url.searchParams.get('from') || undefined;

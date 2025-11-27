@@ -1,20 +1,16 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { queries } from '$lib/server/db';
-import { getUserFromRequest, requireAuth } from '$lib/server/auth';
+import { requireAuth } from '$lib/server/auth';
 
 /**
  * GET /api/time/status
  * Get current clock status for the authenticated user
  */
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ locals }) => {
 	try {
-		// Authenticate user
-		const user = await getUserFromRequest(request);
+		// User is authenticated by hooks.server.ts
+		const user = locals.user;
 		requireAuth(user);
-
-		if (!user) {
-			return json({ error: 'Unauthorized' }, { status: 401 });
-		}
 
 		// Get latest event
 		const latestEvent = queries.getLatestEventByUser(user.id);

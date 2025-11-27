@@ -1,6 +1,6 @@
 import { type RequestHandler } from '@sveltejs/kit';
 import { queries, getDb } from '$lib/server/db';
-import { getUserFromRequest, requireAdmin, getClientIP } from '$lib/server/auth';
+import { requireAdmin, getClientIP } from '$lib/server/auth';
 
 /**
  * GET /api/admin/export
@@ -12,15 +12,11 @@ import { getUserFromRequest, requireAdmin, getClientIP } from '$lib/server/auth'
  *   user_id: Filter by user ID (optional)
  *   format: 'csv' (default) or 'json'
  */
-export const GET: RequestHandler = async ({ request, url }) => {
+export const GET: RequestHandler = async ({ request, url, locals }) => {
 	try {
-		// Authenticate and require admin
-		const user = await getUserFromRequest(request);
+		// User is authenticated by hooks.server.ts
+		const user = locals.user;
 		requireAdmin(user);
-
-		if (!user) {
-			return new Response('Unauthorized', { status: 401 });
-		}
 
 		// Get query parameters
 		const from = url.searchParams.get('from') || undefined;

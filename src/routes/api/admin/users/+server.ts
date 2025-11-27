@@ -1,20 +1,16 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
-import { getUserFromRequest, requireAdmin } from '$lib/server/auth';
+import { requireAdmin } from '$lib/server/auth';
 
 /**
  * GET /api/admin/users
  * List all users (admin only)
  */
-export const GET: RequestHandler = async ({ request }) => {
+export const GET: RequestHandler = async ({ locals }) => {
 	try {
-		// Authenticate and require admin
-		const user = await getUserFromRequest(request);
+		// User is authenticated by hooks.server.ts
+		const user = locals.user;
 		requireAdmin(user);
-
-		if (!user) {
-			return json({ error: 'Unauthorized' }, { status: 401 });
-		}
 
 		// Get all users
 		const db = getDb();

@@ -14,62 +14,35 @@
 
 	onMount(() => {
 		if (browser) {
-			// Load token from localStorage
-			token = localStorage.getItem('token') || '';
+			// Load token from window.__authToken (set by +layout.svelte)
+			token = (window as any).__authToken || '';
 
-			// Listen for token from Placenet/AppDev (via postMessage for iframe integration)
-			window.addEventListener('message', (event) => {
-				console.log('[Shift] Received message:', event.data);
-
-				// AppDev format: { type: 'auth', token: '...', goto: '...' }
-				if (event.data.type === 'auth' && event.data.token) {
-					token = event.data.token;
-					localStorage.setItem('token', token);
-					console.log('[Shift] Token received from AppDev');
-
-					// Send READY confirmation back to parent
-					if (event.source) {
-						event.source.postMessage('READY', '*');
-					}
-
-					loadStatus();
-
-					// Navigate to goto path if specified
-					if (event.data.goto && event.data.goto !== window.location.pathname) {
-						window.location.href = event.data.goto;
+			// Listen for token updates from +layout.svelte
+			const checkToken = () => {
+				const currentToken = (window as any).__authToken || '';
+				if (currentToken !== token) {
+					token = currentToken;
+					if (token) {
+						loadStatus();
 					}
 				}
-				// Alternative format: { type: 'set-token', token: '...' }
-				else if (event.data.type === 'set-token' && event.data.token) {
-					token = event.data.token;
-					localStorage.setItem('token', token);
-					console.log('[Shift] Token received (set-token format)');
-					loadStatus();
-				}
-			});
+			};
 
-			// Send READY message to parent on mount (for AppDev integration)
-			window.parent.postMessage('READY', '*');
+			// Check token periodically (in case it's set after mount)
+			const tokenInterval = setInterval(checkToken, 100);
 
-			// Check URL params for token (for direct links from Placenet)
-			const urlParams = new URLSearchParams(window.location.search);
-			const urlToken = urlParams.get('token');
-			if (urlToken) {
-				token = urlToken;
-				localStorage.setItem('token', token);
-				// Clean URL
-				window.history.replaceState({}, document.title, window.location.pathname);
+			// Also check immediately
+			checkToken();
+
+			// Check if user has seen privacy notice (still use localStorage for this preference)
+			const hasSeenPrivacyNotice = localStorage.getItem('privacy_notice_seen');
+			if (!hasSeenPrivacyNotice && token) {
+				showPrivacyNotice = true;
 			}
 
-			if (token) {
-				loadStatus();
-
-				// Check if user has seen privacy notice
-				const hasSeenPrivacyNotice = localStorage.getItem('privacy_notice_seen');
-				if (!hasSeenPrivacyNotice) {
-					showPrivacyNotice = true;
-				}
-			}
+			return () => {
+				clearInterval(tokenInterval);
+			};
 		}
 	});
 
@@ -113,9 +86,7 @@
 				};
 			}
 
-			const response = await fetch('/api/time/status', {
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			const response = await fetch('/api/time/status');
 
 			const data = await response.json();
 
@@ -141,8 +112,7 @@
 			const response = await fetch('/api/time/clock', {
 				method: 'POST',
 				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${token}`
+					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({ event_type: eventType })
 			});
@@ -211,7 +181,7 @@
 				<div class="dev-notice">
 					<strong>Desarrollo/Testing:</strong>
 					<p>Para testing local, puedes añadir un token manualmente en la consola:</p>
-					<code>localStorage.setItem('token', 'TU_TOKEN_JWT')</code>
+					<code>window.__authToken = 'TU_TOKEN_JWT'; location.reload();</code>
 				</div>
 			</div>
 		{:else}

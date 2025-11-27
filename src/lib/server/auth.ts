@@ -147,23 +147,21 @@ export function generateToken(user: User): string {
 		role: user.role
 	};
 
-	return jwt.sign(payload, JWT_SECRET, {
+	const secret = getJWTSecret();
+	return jwt.sign(payload, secret, {
 		expiresIn: '8h' // 8 hours expiration
 	});
 }
 
 /**
- * Extract user from request headers
- * Looks for Authorization: Bearer <token>
+ * Extract user from token
  * Auto-creates users from Placenet tokens if they don't exist
  */
-export async function getUserFromRequest(request: Request): Promise<User | null> {
-	const authHeader = request.headers.get('authorization');
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
+export async function getUserFromToken(token: string): Promise<User | null> {
+	if (!token) {
 		return null;
 	}
 
-	const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 	const payload = await verifyToken(token);
 
 	if (!payload || !payload.email) {
@@ -191,6 +189,31 @@ export async function getUserFromRequest(request: Request): Promise<User | null>
 	}
 
 	return user;
+}
+
+/**
+ * Extract user from request headers
+ * Looks for x-auth-token header, Authorization: Bearer <token>, or ?token= query param
+ * Auto-creates users from Placenet tokens if they don't exist
+ * @deprecated Use getUserFromToken instead. This is kept for backward compatibility.
+ */
+export async function getUserFromRequest(request: Request): Promise<User | null> {
+	// Check x-auth-token header first
+	let token = request.headers.get('x-auth-token');
+
+	// Fall back to Authorization: Bearer header
+	if (!token) {
+		const authHeader = request.headers.get('authorization');
+		if (authHeader && authHeader.startsWith('Bearer ')) {
+			token = authHeader.substring(7);
+		}
+	}
+
+	if (!token) {
+		return null;
+	}
+
+	return getUserFromToken(token);
 }
 
 /**

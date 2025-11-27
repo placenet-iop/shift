@@ -16,7 +16,7 @@
 
 	onMount(() => {
 		if (browser) {
-			token = localStorage.getItem('token') || '';
+			token = (window as any).__authToken || '';
 			if (!token) {
 				window.location.href = '/';
 				return;
@@ -37,9 +37,7 @@
 
 	async function loadUsers() {
 		try {
-			const response = await fetch('/api/admin/users', {
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			const response = await fetch('/api/admin/users');
 
 			const data = await response.json();
 
@@ -65,10 +63,9 @@
 
 		for (const user of users) {
 			try {
-				const response = await fetch(
-					`/api/admin/events?from=${from.toISOString()}&to=${to.toISOString()}&user_id=${user.id}`,
-					{ headers: { Authorization: `Bearer ${token}` } }
-				);
+			const response = await fetch(
+				`/api/admin/events?from=${from.toISOString()}&to=${to.toISOString()}&user_id=${user.id}`
+			);
 				const data = await response.json();
 
 				if (data.success) {
@@ -104,9 +101,7 @@
 
 			if (params.toString()) url += '?' + params.toString();
 
-			const response = await fetch(url, {
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			const response = await fetch(url);
 
 			const data = await response.json();
 
@@ -140,9 +135,7 @@
 
 			if (params.toString()) url += '&' + params.toString();
 
-			const response = await fetch(url, {
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			const response = await fetch(url);
 
 			if (response.ok) {
 				const blob = await response.blob();

@@ -11,7 +11,7 @@
 
 	onMount(() => {
 		if (browser) {
-			token = localStorage.getItem('token') || '';
+			token = (window as any).__authToken || '';
 			if (!token) {
 				window.location.href = '/';
 				return;
@@ -42,9 +42,7 @@
 
 			if (params.toString()) url += '?' + params.toString();
 
-			const response = await fetch(url, {
-				headers: { Authorization: `Bearer ${token}` }
-			});
+			const response = await fetch(url);
 
 			const data = await response.json();
 
