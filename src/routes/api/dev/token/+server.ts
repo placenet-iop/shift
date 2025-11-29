@@ -29,20 +29,53 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Check if user exists
-		let user = queries.getUserByEmail(email);
+		let user: any;
+		try {
+			user = await queries.getUserByEmail(email);
+		} catch (dbError) {
+			console.error('Database query error:', dbError);
+			return json(
+				{
+					error: `Database error: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}. Make sure the database is initialized.`
+				},
+				{ status: 500 }
+			);
+		}
 
 		// If user doesn't exist, create one
 		if (!user) {
-			const userId = queries.createUser(email, name, role);
-			user = queries.getUserById(userId);
+			try {
+				const userId = await queries.createUser(email, name, role);
+				user = await queries.getUserById(userId);
 
-			if (!user) {
-				return json({ error: 'Failed to create user' }, { status: 500 });
+				if (!user) {
+					return json({ error: 'Failed to create user - user was not found after creation' }, { status: 500 });
+				}
+			} catch (createError) {
+				console.error('User creation error:', createError);
+				return json(
+					{
+						error: `Failed to create user: ${createError instanceof Error ? createError.message : 'Unknown error'}`
+					},
+					{ status: 500 }
+				);
 			}
 		}
 
 		// Generate JWT token
-		const token = generateToken(user);
+		let token: string;
+		try {
+			token = generateToken(user);
+		} catch (tokenError) {
+			console.error('Token generation failed:', tokenError);
+			const errorMessage = tokenError instanceof Error ? tokenError.message : 'Unknown error';
+			return json(
+				{
+					error: `Failed to generate token: ${errorMessage}. Make sure JWT_SECRET is set in .env file.`
+				},
+				{ status: 500 }
+			);
+		}
 
 		return json({
 			success: true,
@@ -58,9 +91,12 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 	} catch (error) {
 		console.error('Token generation error:', error);
+		const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+		const errorStack = error instanceof Error ? error.stack : undefined;
+		console.error('Error stack:', errorStack);
 		return json(
 			{
-				error: error instanceof Error ? error.message : 'Internal server error'
+				error: `Failed to generate token: ${errorMessage}`
 			},
 			{ status: 500 }
 		);
@@ -83,12 +119,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	try {
 		// Check if user exists
-		let user = queries.getUserByEmail(email);
+		let user = await queries.getUserByEmail(email);
 
 		// If user doesn't exist, create one
 		if (!user) {
-			const userId = queries.createUser(email, name, role);
-			user = queries.getUserById(userId);
+			const userId = await queries.createUser(email, name, role);
+			user = await queries.getUserById(userId);
 
 			if (!user) {
 				return json({ error: 'Failed to create user' }, { status: 500 });

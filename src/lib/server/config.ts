@@ -36,7 +36,7 @@ export function getConfig(): ShiftConfig {
 		const configData = readFileSync(configPath, 'utf-8');
 		config = JSON.parse(configData);
 	}
-	return config;
+	return config!;
 }
 
 export function getJWTSecret(): string {

@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Script de Backup Automático para Control Horario
+# Script de Backup Automático para Shift
 # Cumplimiento: Real Decreto-ley 8/2019 (retención 4 años)
 
 set -e
 
 # Configuración
-DB_PATH="${DB_PATH:-./data/control_horario.db}"
+DB_PATH="${DB_PATH:-./shift.db}"
 BACKUP_DIR="${BACKUP_DIR:-./backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-1460}"  # 4 años = 1460 días
 
@@ -40,7 +40,7 @@ mkdir -p "$BACKUP_DIR"
 
 # Nombre del archivo de backup con timestamp
 TIMESTAMP=$(date +'%Y%m%d_%H%M%S')
-BACKUP_FILE="$BACKUP_DIR/control_horario_${TIMESTAMP}.db"
+BACKUP_FILE="$BACKUP_DIR/shift_records_${TIMESTAMP}.db"
 BACKUP_FILE_GZ="${BACKUP_FILE}.gz"
 
 log "Iniciando backup de la base de datos..."
@@ -73,19 +73,19 @@ fi
 log "Limpiando backups antiguos (retención: $RETENTION_DAYS días)..."
 DELETED_COUNT=0
 
-find "$BACKUP_DIR" -name "control_horario_*.db.gz" -type f -mtime +$RETENTION_DAYS | while read -r old_backup; do
+find "$BACKUP_DIR" -name "shift_records_*.db.gz" -type f -mtime +$RETENTION_DAYS | while read -r old_backup; do
     log "Eliminando backup antiguo: $(basename "$old_backup")"
     rm "$old_backup"
     DELETED_COUNT=$((DELETED_COUNT + 1))
 done
 
 # Listar backups existentes
-BACKUP_COUNT=$(find "$BACKUP_DIR" -name "control_horario_*.db.gz" -type f | wc -l)
+BACKUP_COUNT=$(find "$BACKUP_DIR" -name "shift_records_*.db.gz" -type f | wc -l)
 log "Total de backups almacenados: $BACKUP_COUNT"
 
 # Mostrar últimos 5 backups
 log "Últimos backups:"
-find "$BACKUP_DIR" -name "control_horario_*.db.gz" -type f -printf "%T@ %p\n" | sort -rn | head -5 | while read -r timestamp filepath; do
+find "$BACKUP_DIR" -name "shift_records_*.db.gz" -type f -printf "%T@ %p\n" | sort -rn | head -5 | while read -r timestamp filepath; do
     size=$(du -h "$filepath" | cut -f1)
     date=$(date -d "@${timestamp%.*}" +'%Y-%m-%d %H:%M:%S')
     echo "  - $(basename "$filepath") ($size) - $date"

@@ -34,7 +34,7 @@
 
 	function copyToken() {
 		navigator.clipboard.writeText(token);
-		alert('Token copiado al portapapeles');
+		alert('Token copied to clipboard');
 	}
 
 	function goWithToken() {
@@ -45,33 +45,33 @@
 <main>
 	<div class="container">
 		<h1>🔧 Token Generator - Development Only</h1>
-		<p class="subtitle">Genera tokens JWT para testing local</p>
+		<p class="subtitle">Generate JWT tokens for local testing</p>
 
 		<div class="warning">
-			⚠️ Este endpoint solo está disponible en desarrollo y será deshabilitado en producción.
+			⚠️ This endpoint is only available in development and will be disabled in production.
 		</div>
 
 		<div class="form">
 			<div class="form-group">
 				<label for="email">Email:</label>
-				<input type="email" id="email" bind:value={email} placeholder="usuario@ejemplo.com" />
+				<input type="email" id="email" bind:value={email} placeholder="user@example.com" />
 			</div>
 
 			<div class="form-group">
-				<label for="name">Nombre:</label>
-				<input type="text" id="name" bind:value={name} placeholder="Nombre Completo" />
+				<label for="name">Name:</label>
+				<input type="text" id="name" bind:value={name} placeholder="Full Name" />
 			</div>
 
 			<div class="form-group">
-				<label for="role">Rol:</label>
+				<label for="role">Role:</label>
 				<select id="role" bind:value={role}>
-					<option value="worker">Trabajador</option>
-					<option value="admin">Administrador</option>
+					<option value="worker">Worker</option>
+					<option value="admin">Administrator</option>
 				</select>
 			</div>
 
 			<button class="btn-primary" on:click={generateToken} disabled={loading}>
-				{loading ? 'Generando...' : 'Generar Token'}
+				{loading ? 'Generating...' : 'Generate Token'}
 			</button>
 		</div>
 
@@ -81,26 +81,26 @@
 
 		{#if token}
 			<div class="result">
-				<h3>Token Generado:</h3>
+				<h3>Generated Token:</h3>
 				<div class="token-box">
 					<code>{token}</code>
 				</div>
 				<div class="actions">
-					<button class="btn-secondary" on:click={copyToken}>📋 Copiar Token</button>
-					<button class="btn-success" on:click={goWithToken}>▶️ Ir a la App</button>
+					<button class="btn-secondary" on:click={copyToken}>📋 Copy Token</button>
+					<button class="btn-success" on:click={goWithToken}>▶️ Go to App</button>
 				</div>
 
 				<div class="quick-links">
-					<h4>Links Rápidos:</h4>
+					<h4>Quick Links:</h4>
 					<ul>
 						<li>
-							<a href="/api/dev/token?email=worker@test.com&name=Trabajador Test&role=worker">
-								Generar Worker
+							<a href="/api/dev/token?email=worker@test.com&name=Test Worker&role=worker">
+								Generate Worker Token
 							</a>
 						</li>
 						<li>
-							<a href="/api/dev/token?email=admin@test.com&name=Admin Test&role=admin">
-								Generar Admin
+							<a href="/api/dev/token?email=admin@test.com&name=Test Admin&role=admin">
+								Generate Admin Token
 							</a>
 						</li>
 					</ul>
@@ -109,8 +109,8 @@
 		{/if}
 
 		<div class="info">
-			<h3>Uso desde consola:</h3>
-			<pre><code>// Generar token
+			<h3>Usage from console:</h3>
+			{@html `<pre><code>// Generate token
 const res = await fetch('/api/dev/token', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -123,12 +123,12 @@ const res = await fetch('/api/dev/token', {
 const data = await res.json();
 console.log(data.token);
 
-// O simplemente:
-localStorage.setItem('token', 'TU_TOKEN_AQUI');
-window.location.reload();</code></pre>
+// Or simply:
+localStorage.setItem('token', 'YOUR_TOKEN_HERE');
+window.location.reload();</code></pre>`}
 		</div>
 
-		<a href="/" class="back-link">← Volver a la app</a>
+		<a href="/" class="back-link">← Back to app</a>
 	</div>
 </main>
 

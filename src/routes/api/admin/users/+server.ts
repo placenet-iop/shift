@@ -1,6 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { requireAdmin } from '$lib/server/auth';
+import { serializeUser } from '$lib/server/db/serializers';
 
 /**
  * GET /api/admin/users
@@ -9,16 +10,19 @@ import { requireAdmin } from '$lib/server/auth';
 export const GET: RequestHandler = async ({ locals }) => {
 	try {
 		// User is authenticated by hooks.server.ts
-		const user = locals.user;
-		requireAdmin(user);
+		const user = requireAdmin(locals.user ?? null);
 
 		// Get all users
-		const db = getDb();
-		const users = db.prepare('SELECT id, email, name, role, active, created_at FROM users').all();
+		const prisma = getDb();
+		const users = await prisma.user.findMany({
+			orderBy: {
+				createdAt: 'desc'
+			}
+		});
 
 		return json({
 			success: true,
-			users
+			users: users.map(serializeUser)
 		});
 	} catch (error) {
 		console.error('Get users error:', error);

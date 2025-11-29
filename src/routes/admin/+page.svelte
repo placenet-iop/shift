@@ -1,18 +1,39 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { translate, formatDateTime as formatDateTimeStore, locale } from '$lib/i18n';
+	import { calculateWeeklySummaries, type WeeklySummary } from '$lib/utils/time';
 
-	let token = '';
-	let users: any[] = [];
-	let events: any[] = [];
-	let selectedUserId = '';
-	let loading = false;
-	let error = '';
-	let fromDate = '';
-	let toDate = '';
-	let currentTab: 'events' | 'users' = 'events';
-	let eventTypeFilter = '';
-	let domainFilter = '';
+	// Make translation function reactive
+	let t = $derived.by(() => $translate);
+	
+	// Make formatDateTime reactive
+	let formatDateTime = $derived.by(() => $formatDateTimeStore);
+	const localeCode = $derived.by(() => ($locale === 'es' ? 'es-ES' : 'en-US'));
+
+	function formatInputDate(date: Date): string {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		return `${year}-${month}-${day}`;
+	}
+
+	const now = new Date();
+	const defaultToDate = formatInputDate(now);
+	const defaultFromDate = formatInputDate(new Date(now.getFullYear(), now.getMonth(), 1));
+
+	let token = $state('');
+	let users = $state<any[]>([]);
+	let events = $state<any[]>([]);
+	let selectedUserId = $state('');
+	let loading = $state(false);
+	let error = $state('');
+	let fromDate = $state(defaultFromDate);
+	let toDate = $state(defaultToDate);
+	let currentTab = $state<'events' | 'users'>('events');
+	let eventTypeFilter = $state('');
+	let domainFilter = $state('');
+	let userTimelineId = $state<number | null>(null);
 
 	onMount(() => {
 		if (browser) {
@@ -22,22 +43,45 @@
 				return;
 			}
 
-			// Set default dates: last 30 days
-			const to = new Date();
-			const from = new Date();
-			from.setDate(from.getDate() - 30);
-
-			toDate = to.toISOString().split('T')[0];
-			fromDate = from.toISOString().split('T')[0];
-
 			loadUsers();
 			loadEvents();
 		}
 	});
 
+	function clampToToday(value: string): string {
+		if (!value) return defaultToDate;
+		return value > defaultToDate ? defaultToDate : value;
+	}
+
+	function handleFromDateChange(value: string) {
+		const nextValue = value || defaultFromDate;
+		fromDate = nextValue > toDate ? toDate : nextValue;
+	}
+
+	function handleToDateChange(value: string) {
+		const nextValue = clampToToday(value || defaultToDate);
+		toDate = nextValue;
+		if (fromDate > nextValue) {
+			fromDate = nextValue;
+		}
+	}
+
 	async function loadUsers() {
 		try {
-			const response = await fetch('/api/admin/users');
+			const response = await fetch('/api/admin/users', {
+				headers: {
+					'X-Auth-Token': token
+				}
+			});
+
+			if (!response.ok) {
+				if (response.status === 401) {
+					console.error('[Admin] Unauthorized - token may be invalid or user not found');
+					error = 'Unauthorized. Please check your authentication token.';
+					return;
+				}
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
 
 			const data = await response.json();
 
@@ -46,25 +90,31 @@
 				// Load stats for each user
 				await loadUserStats();
 			} else {
-				error = data.error || 'Failed to load users';
+				error = data.error || t('messages.failedToLoadUsers');
 			}
 		} catch (e) {
-			error = 'Connection error';
+			console.error('[Admin] Error loading users:', e);
+			error = t('common.connectionError');
 		}
 	}
 
-	let userStats: Record<number, any> = {};
+let userStats = $state<Record<number, any>>({});
 
 	async function loadUserStats() {
-		// Get last 30 days stats for each user
+		// Get last 1 month stats for each user
 		const to = new Date();
 		const from = new Date();
-		from.setDate(from.getDate() - 30);
+		from.setMonth(from.getMonth() - 1);
 
 		for (const user of users) {
 			try {
 			const response = await fetch(
-				`/api/admin/events?from=${from.toISOString()}&to=${to.toISOString()}&user_id=${user.id}`
+				`/api/admin/events?from=${from.toISOString()}&to=${to.toISOString()}&user_id=${user.id}`,
+				{
+					headers: {
+						'X-Auth-Token': token
+					}
+				}
 			);
 				const data = await response.json();
 
@@ -101,21 +151,38 @@
 
 			if (params.toString()) url += '?' + params.toString();
 
-			const response = await fetch(url);
+			const response = await fetch(url, {
+				headers: {
+					'X-Auth-Token': token
+				}
+			});
+
+			if (!response.ok) {
+				if (response.status === 401) {
+					console.error('[Admin] Unauthorized - token may be invalid or user not found');
+					error = 'Unauthorized. Please check your authentication token.';
+					const errorData = await response.json().catch(() => ({}));
+					if (errorData.error) {
+						error = errorData.error;
+					}
+					return;
+				}
+				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+			}
 
 			const data = await response.json();
 
 			if (data.success) {
 				events = data.events;
 			} else {
-				error = data.error || 'Failed to load events';
+				error = data.error || t('messages.failedToLoadEvents');
 				if (error.includes('Admin role required') || error.includes('Unauthorized')) {
-					alert('No tienes permisos de administrador');
+					alert(t('messages.noAdminPermissions'));
 					window.location.href = '/';
 				}
 			}
 		} catch (e) {
-			error = 'Connection error';
+			error = t('common.connectionError');
 		} finally {
 			loading = false;
 		}
@@ -135,31 +202,34 @@
 
 			if (params.toString()) url += '&' + params.toString();
 
-			const response = await fetch(url);
+			const response = await fetch(url, {
+				headers: {
+					'X-Auth-Token': token
+				}
+			});
 
 			if (response.ok) {
 				const blob = await response.blob();
 				const downloadUrl = window.URL.createObjectURL(blob);
 				const a = document.createElement('a');
 				a.href = downloadUrl;
-				a.download = `control_horario_${Date.now()}.${format}`;
+				a.download = `shift_records_${Date.now()}.${format}`;
 				document.body.appendChild(a);
 				a.click();
 				document.body.removeChild(a);
 				window.URL.revokeObjectURL(downloadUrl);
 			} else {
-				error = 'Export failed';
+				error = t('messages.exportFailed');
 			}
 		} catch (e) {
-			error = 'Export error';
+			error = t('messages.exportError');
 		} finally {
 			loading = false;
 		}
 	}
 
-	function formatDateTime(isoDate: string): string {
-		const date = new Date(isoDate);
-		return date.toLocaleString('es-ES', {
+	function formatDateTimeLocal(isoDate: string): string {
+		return formatDateTime(isoDate, {
 			day: '2-digit',
 			month: '2-digit',
 			year: 'numeric',
@@ -171,10 +241,10 @@
 
 	function getEventLabel(type: string): string {
 		const labels: Record<string, string> = {
-			in: 'Entrada',
-			out: 'Salida',
-			pause_start: 'Inicio Pausa',
-			pause_end: 'Fin Pausa'
+			in: t('events.clockIn'),
+			out: t('events.clockOut'),
+			pause_start: t('events.breakStart'),
+			pause_end: t('events.breakEnd')
 		};
 		return labels[type] || type;
 	}
@@ -191,105 +261,133 @@
 
 	function getUserName(userId: number): string {
 		const user = users.find((u) => u.id === userId);
-		return user ? user.name : `Usuario ${userId}`;
+		return user ? user.name : `User ${userId}`;
 	}
 
 	// Computed: Get unique domains from events
-	$: uniqueDomains = Array.from(new Set(events.map(e => e.domain_name).filter(Boolean)));
+	let uniqueDomains = $derived(Array.from(new Set(events.map(e => e.domain_name).filter(Boolean))));
 
 	// Computed: Filter events by type and domain
-	$: filteredEvents = events.filter(event => {
+	let filteredEvents = $derived(events.filter(event => {
 		if (eventTypeFilter && event.event_type !== eventTypeFilter) return false;
 		if (domainFilter && event.domain_name !== domainFilter) return false;
 		return true;
-	});
+	}));
+
+	let weeklySummaries = $derived(calculateWeeklySummaries(events));
+	let userTimelineEvents = $derived(userTimelineId ? events.filter((event) => event.user_id === userTimelineId) : []);
+	let userTimelineSummaries = $derived(calculateWeeklySummaries(userTimelineEvents));
+	let selectedTimelineUser = $derived(userTimelineId ? users.find((user) => user.id === userTimelineId) : null);
+
+	function formatWeekRange(summary: WeeklySummary): string {
+		const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+		const start = new Date(summary.weekStart);
+		const end = new Date(summary.weekEnd);
+		return `${start.toLocaleDateString(localeCode, options)} – ${end.toLocaleDateString(localeCode, options)}`;
+	}
+
+	function toggleUserTimeline(userId: number) {
+		userTimelineId = userTimelineId === userId ? null : userId;
+	}
 </script>
 
 <main>
 	<div class="container">
 		<header>
 			<div>
-				<h1>Panel de Administración</h1>
-				<p class="subtitle">Control Horario - Vista de Administrador</p>
+				<h1>{t('admin.title')}</h1>
+				<p class="subtitle">{t('admin.subtitle')}</p>
 			</div>
-			<a href="/" class="back-link">← Volver al inicio</a>
+			<a href="/" class="back-link">{t('common.backToHome')}</a>
 		</header>
 
 		<div class="tabs">
 			<button
 				class="tab"
 				class:active={currentTab === 'events'}
-				on:click={() => (currentTab = 'events')}
+				onclick={() => (currentTab = 'events')}
 			>
-				Registros de Fichajes
+				{t('admin.tabs.timeRecords')}
 			</button>
 			<button
 				class="tab"
 				class:active={currentTab === 'users'}
-				on:click={() => (currentTab = 'users')}
+				onclick={() => (currentTab = 'users')}
 			>
-				Usuarios
+				{t('admin.tabs.users')}
 			</button>
 		</div>
 
 		{#if currentTab === 'events'}
 			<div class="filters-section">
-				<h3 class="filters-title">Filtros de Búsqueda</h3>
+				<h3 class="filters-title">{t('admin.filters.searchFilters')}</h3>
 				<div class="filters">
 					<div class="filter-group">
-						<label for="user">Usuario:</label>
+						<label for="user">{t('admin.filters.user')}</label>
 						<select id="user" bind:value={selectedUserId}>
-							<option value="">Todos los usuarios</option>
+							<option value="">{t('admin.filters.allUsers')}</option>
 							{#each users as user}
 								<option value={user.id}>{user.name} ({user.email})</option>
 							{/each}
 						</select>
 					</div>
 					<div class="filter-group">
-						<label for="from">Desde:</label>
-						<input type="date" id="from" bind:value={fromDate} />
+						<label for="from">{t('admin.filters.from')}</label>
+						<input
+							type="date"
+							id="from"
+							bind:value={fromDate}
+							max={toDate}
+							onchange={(event) => handleFromDateChange(event.currentTarget.value)}
+						/>
 					</div>
 					<div class="filter-group">
-						<label for="to">Hasta:</label>
-						<input type="date" id="to" bind:value={toDate} />
+						<label for="to">{t('admin.filters.to')}</label>
+						<input
+							type="date"
+							id="to"
+							bind:value={toDate}
+							max={defaultToDate}
+							onchange={(event) => handleToDateChange(event.currentTarget.value)}
+						/>
 					</div>
-					<button on:click={loadEvents} disabled={loading}> Buscar </button>
+					<button onclick={loadEvents} disabled={loading}>{t('buttons.search')}</button>
 				</div>
 
-				<h3 class="filters-title">Filtros de Vista</h3>
+				<h3 class="filters-title">{t('admin.filters.viewFilters')}</h3>
 				<div class="filters secondary">
 					<div class="filter-group">
-						<label for="eventType">Tipo de Evento:</label>
+						<label for="eventType">{t('admin.filters.eventType')}</label>
 						<select id="eventType" bind:value={eventTypeFilter}>
-							<option value="">Todos los eventos</option>
-							<option value="in">Entrada</option>
-							<option value="out">Salida</option>
-							<option value="pause_start">Inicio Pausa</option>
-							<option value="pause_end">Fin Pausa</option>
+							<option value="">{t('admin.filters.allEvents')}</option>
+							<option value="in">{t('events.clockIn')}</option>
+							<option value="out">{t('events.clockOut')}</option>
+							<option value="pause_start">{t('events.breakStart')}</option>
+							<option value="pause_end">{t('events.breakEnd')}</option>
 						</select>
 					</div>
 					<div class="filter-group">
-						<label for="domain">Dominio:</label>
+						<label for="domain">{t('admin.filters.domain')}</label>
 						<select id="domain" bind:value={domainFilter}>
-							<option value="">Todos los dominios</option>
+							<option value="">{t('admin.filters.allDomains')}</option>
 							{#each uniqueDomains as domain}
 								<option value={domain}>{domain}</option>
 							{/each}
 						</select>
 					</div>
-					{#if eventTypeFilter || domainFilter}
-						<button class="btn-clear" on:click={() => { eventTypeFilter = ''; domainFilter = ''; }}>
-							Limpiar Filtros
+						{#if eventTypeFilter || domainFilter}
+							<button class="btn-clear" onclick={() => { eventTypeFilter = ''; domainFilter = ''; }}>
+							{t('common.clearFilters')}
 						</button>
 					{/if}
 				</div>
 
 				<div class="export-buttons">
-					<button class="btn-export" on:click={() => exportData('csv')} disabled={loading}>
-						Exportar CSV
+					<button class="btn-export" onclick={() => exportData('csv')} disabled={loading}>
+						{t('buttons.exportCSV')}
 					</button>
-					<button class="btn-export" on:click={() => exportData('json')} disabled={loading}>
-						Exportar JSON
+					<button class="btn-export" onclick={() => exportData('json')} disabled={loading}>
+						{t('buttons.exportJSON')}
 					</button>
 				</div>
 			</div>
@@ -299,42 +397,56 @@
 			{/if}
 
 			{#if loading}
-				<div class="loading">Cargando registros...</div>
+				<div class="loading">{t('admin.events.loadingRecords')}</div>
 			{:else if events.length === 0}
 				<div class="empty">
-					<p>No hay registros en el período seleccionado</p>
+					<p>{t('admin.events.noRecords')}</p>
 				</div>
 			{:else}
 				<div class="summary">
 					<div class="summary-grid">
 						<div class="summary-card">
-							<span class="summary-label">Total de registros</span>
+							<span class="summary-label">{t('admin.events.totalRecords')}</span>
 							<span class="summary-value">{events.length}</span>
 						</div>
 						<div class="summary-card">
-							<span class="summary-label">Mostrando</span>
+							<span class="summary-label">{t('admin.events.showing')}</span>
 							<span class="summary-value">{filteredEvents.length}</span>
 						</div>
 						<div class="summary-card">
-							<span class="summary-label">Usuarios</span>
+							<span class="summary-label">{t('admin.events.users')}</span>
 							<span class="summary-value">{new Set(events.map(e => e.user_id)).size}</span>
 						</div>
 						<div class="summary-card">
-							<span class="summary-label">Dominios</span>
+							<span class="summary-label">{t('admin.events.domains')}</span>
 							<span class="summary-value">{uniqueDomains.length}</span>
 						</div>
 					</div>
 				</div>
 
+				{#if weeklySummaries.length}
+					<div class="weekly-summary">
+						<h3>{t('history.weeklySummary')}</h3>
+						<div class="weekly-grid">
+							{#each weeklySummaries as summary}
+								<div class="weekly-card">
+									<div class="week-range">{formatWeekRange(summary)}</div>
+									<div class="week-hours">{summary.totalHours.toFixed(2)}h</div>
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<div class="table-container">
 					<table>
 						<thead>
 							<tr>
-								<th>Trabajador</th>
-								<th>Tipo</th>
-								<th>Fecha y Hora</th>
-								<th>Dominio ID</th>
-								<th>Dominio</th>
+								<th>{t('admin.events.tableHeaders.worker')}</th>
+								<th>{t('admin.events.tableHeaders.type')}</th>
+								<th>{t('admin.events.tableHeaders.dateTime')}</th>
+								<th>{t('admin.events.tableHeaders.domainId')}</th>
+								<th>{t('admin.events.tableHeaders.domain')}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -349,7 +461,7 @@
 											{getEventLabel(event.event_type)}
 										</span>
 									</td>
-									<td>{formatDateTime(event.ts)}</td>
+									<td>{formatDateTimeLocal(event.ts)}</td>
 									<td>{event.domain_id || '-'}</td>
 									<td>{event.domain_name || '-'}</td>
 								</tr>
@@ -361,18 +473,18 @@
 		{:else}
 			<div class="users-section">
 				<div class="users-header">
-					<h3>Gestión de Usuarios</h3>
+					<h3>{t('admin.users.title')}</h3>
 					<div class="users-summary">
 						<div class="summary-pill">
-							<span class="pill-label">Total:</span>
+							<span class="pill-label">{t('admin.users.total')}</span>
 							<span class="pill-value">{users.length}</span>
 						</div>
 						<div class="summary-pill">
-							<span class="pill-label">Activos:</span>
+							<span class="pill-label">{t('admin.users.active')}</span>
 							<span class="pill-value">{users.filter(u => u.active).length}</span>
 						</div>
 						<div class="summary-pill">
-							<span class="pill-label">Admins:</span>
+							<span class="pill-label">{t('admin.users.admins')}</span>
 							<span class="pill-value">{users.filter(u => u.role === 'admin').length}</span>
 						</div>
 					</div>
@@ -382,17 +494,21 @@
 					<table class="users-table">
 						<thead>
 							<tr>
-								<th>Usuario</th>
-								<th>Rol / Estado</th>
-								<th>Dominio</th>
-								<th>Actividad (30 días)</th>
-								<th>Último Fichaje</th>
-								<th>Registro</th>
+								<th>{t('admin.users.tableHeaders.user')}</th>
+								<th>{t('admin.users.tableHeaders.roleStatus')}</th>
+								<th>{t('admin.users.tableHeaders.domain')}</th>
+								<th>{t('admin.users.tableHeaders.activity')}</th>
+								<th>{t('admin.users.tableHeaders.lastRecord')}</th>
+								<th>{t('admin.users.tableHeaders.registered')}</th>
 							</tr>
 						</thead>
 						<tbody>
 							{#each users as user}
-								<tr class:inactive={!user.active}>
+								<tr
+									class:inactive={!user.active}
+									class:timeline-active={userTimelineId === user.id}
+									onclick={() => toggleUserTimeline(user.id)}
+								>
 									<td>
 										<div class="user-cell">
 											<div class="user-avatar-small">
@@ -407,10 +523,10 @@
 									<td>
 										<div class="badges-cell">
 											<span class="role-badge" class:admin={user.role === 'admin'}>
-												{user.role === 'admin' ? 'Admin' : 'Trabajador'}
+												{user.role === 'admin' ? t('admin.users.roles.admin') : t('admin.users.roles.worker')}
 											</span>
 											<span class="status-badge" class:active={user.active}>
-												{user.active ? 'Activo' : 'Inactivo'}
+												{user.active ? t('admin.users.status.active') : t('admin.users.status.inactive')}
 											</span>
 										</div>
 									</td>
@@ -428,39 +544,39 @@
 										{#if userStats[user.id]}
 											<div class="stats-cell">
 												<div class="stat-item">
-													<span class="stat-label">Total:</span>
+													<span class="stat-label">{t('admin.users.stats.total')}</span>
 													<span class="stat-value">{userStats[user.id].totalEvents}</span>
 												</div>
 												<div class="stat-item">
-													<span class="stat-label">Entradas:</span>
+													<span class="stat-label">{t('admin.users.stats.clockIns')}</span>
 													<span class="stat-value">{userStats[user.id].entriesCount}</span>
 												</div>
 												<div class="stat-item">
-													<span class="stat-label">Salidas:</span>
+													<span class="stat-label">{t('admin.users.stats.clockOuts')}</span>
 													<span class="stat-value">{userStats[user.id].exitsCount}</span>
 												</div>
 											</div>
 										{:else}
-											<span class="text-muted">Cargando...</span>
+											<span class="text-muted">{t('admin.users.loading')}</span>
 										{/if}
 									</td>
 									<td>
 										{#if userStats[user.id]?.lastEvent}
 											<div class="last-event-cell">
 												<div class="last-event-time">
-													{formatDateTime(userStats[user.id].lastEvent)}
+													{formatDateTimeLocal(userStats[user.id].lastEvent)}
 												</div>
 												<span class="event-type-small" style="background-color: {getEventColor(userStats[user.id].lastEventType)}">
 													{getEventLabel(userStats[user.id].lastEventType)}
 												</span>
 											</div>
 										{:else}
-											<span class="text-muted">Sin fichajes</span>
+											<span class="text-muted">{t('admin.users.noRecords')}</span>
 										{/if}
 									</td>
 									<td>
 										<div class="date-cell">
-											{new Date(user.created_at).toLocaleDateString('es-ES')}
+											{new Date(user.created_at).toLocaleDateString($locale === 'es' ? 'es-ES' : 'en-US')}
 										</div>
 									</td>
 								</tr>
@@ -468,13 +584,67 @@
 						</tbody>
 					</table>
 				</div>
+
+				{#if userTimelineId}
+					<div class="timeline-panel">
+						<div class="timeline-header">
+							<div>
+								<h3>{selectedTimelineUser?.name || t('admin.users.title')}</h3>
+								{#if selectedTimelineUser?.email}
+									<p class="timeline-subtitle">{selectedTimelineUser.email}</p>
+								{/if}
+							</div>
+							<button class="btn-clear-timeline" onclick={() => (userTimelineId = null)}>
+								{t('common.close')}
+							</button>
+						</div>
+
+						{#if userTimelineEvents.length === 0}
+							<p class="timeline-empty">{t('history.noRecords')}</p>
+						{:else}
+							{#if userTimelineSummaries.length}
+								<div class="weekly-summary compact">
+									<h4>{t('history.weeklySummary')}</h4>
+									<div class="weekly-grid">
+										{#each userTimelineSummaries as summary}
+											<div class="weekly-card">
+												<div class="week-range">{formatWeekRange(summary)}</div>
+												<div class="week-hours">{summary.totalHours.toFixed(2)}h</div>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
+
+							<div class="timeline-events">
+								{#each userTimelineEvents as event}
+									<div class="timeline-item">
+										<div
+											class="timeline-badge"
+											style="background-color: {getEventColor(event.event_type)}"
+										>
+											{getEventLabel(event.event_type)}
+										</div>
+										<div class="timeline-details">
+											<div class="timeline-date">{formatDateTimeLocal(event.ts)}</div>
+											<div class="timeline-meta">
+												<span>{event.domain_name || '-'}</span>
+												<span class="timeline-source">{event.source}</span>
+											</div>
+										</div>
+									</div>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 		{/if}
 
 		<div class="legal-footer">
-			<a href="/privacy" class="legal-link">Política de Privacidad</a>
+			<a href="/privacy" class="legal-link">{t('legal.privacyPolicy')}</a>
 			<span class="separator">•</span>
-			<a href="/legal" class="legal-link">Aviso Legal</a>
+			<a href="/legal" class="legal-link">{t('legal.legalNotice')}</a>
 		</div>
 	</div>
 </main>
@@ -712,6 +882,53 @@
 		color: #111827;
 	}
 
+	.weekly-summary {
+		background: white;
+		padding: 1.5rem;
+		border-radius: 12px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		margin-bottom: 1.5rem;
+	}
+
+	.weekly-summary h3,
+	.weekly-summary h4 {
+		margin: 0 0 1rem 0;
+		font-size: 1.1rem;
+		color: #111827;
+	}
+
+	.weekly-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 1rem;
+	}
+
+	.weekly-card {
+		background: #f9fafb;
+		border-radius: 10px;
+		padding: 1rem;
+		border-left: 4px solid #667eea;
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.week-range {
+		font-size: 0.9rem;
+		color: #4b5563;
+		font-weight: 600;
+	}
+
+	.week-hours {
+		font-size: 1.4rem;
+		font-weight: 700;
+		color: #111827;
+	}
+
+	.weekly-summary.compact {
+		margin-bottom: 1rem;
+	}
+
 	.table-container {
 		background: white;
 		border-radius: 12px;
@@ -832,6 +1049,7 @@
 	.users-table tbody tr {
 		border-bottom: 1px solid #e5e7eb;
 		transition: background 0.2s;
+		cursor: pointer;
 	}
 
 	.users-table tbody tr:hover {
@@ -840,6 +1058,11 @@
 
 	.users-table tbody tr.inactive {
 		opacity: 0.6;
+	}
+
+	.users-table tbody tr.timeline-active {
+		border-left: 4px solid #667eea;
+		background: #eef2ff;
 	}
 
 	.users-table td {
@@ -983,6 +1206,101 @@
 	.date-cell {
 		font-size: 0.875rem;
 		color: #6b7280;
+	}
+
+	.timeline-panel {
+		margin-top: 1.5rem;
+		background: white;
+		border-radius: 12px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		padding: 1.5rem;
+	}
+
+	.timeline-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+
+	.timeline-header h3 {
+		margin: 0;
+		font-size: 1.25rem;
+		color: #111827;
+	}
+
+	.timeline-subtitle {
+		margin: 0.25rem 0 0 0;
+		color: #6b7280;
+		font-size: 0.9rem;
+	}
+
+	.btn-clear-timeline {
+		background: #ef4444;
+		color: white;
+		border: none;
+		border-radius: 6px;
+		padding: 0.4rem 0.75rem;
+		cursor: pointer;
+		font-weight: 600;
+	}
+
+	.btn-clear-timeline:hover {
+		background: #dc2626;
+	}
+
+	.timeline-empty {
+		margin: 1rem 0 0 0;
+		color: #6b7280;
+	}
+
+	.timeline-events {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.timeline-item {
+		display: flex;
+		gap: 1rem;
+		align-items: flex-start;
+		padding: 1rem;
+		background: #f9fafb;
+		border-radius: 10px;
+	}
+
+	.timeline-badge {
+		min-width: 130px;
+		text-align: center;
+		padding: 0.4rem 0.8rem;
+		border-radius: 999px;
+		color: white;
+		font-weight: 600;
+		font-size: 0.85rem;
+	}
+
+	.timeline-details {
+		flex: 1;
+	}
+
+	.timeline-date {
+		font-weight: 600;
+		color: #111827;
+		margin-bottom: 0.25rem;
+	}
+
+	.timeline-meta {
+		display: flex;
+		gap: 1rem;
+		color: #6b7280;
+		font-size: 0.85rem;
+		flex-wrap: wrap;
+	}
+
+	.timeline-source {
+		text-transform: uppercase;
+		font-weight: 600;
+		font-size: 0.75rem;
 	}
 
 	.text-muted {

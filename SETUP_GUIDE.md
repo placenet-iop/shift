@@ -35,7 +35,7 @@ Create a `.env` file in the shift root:
 JWT_SECRET=your-shared-secret-key-with-placenet
 
 # Database
-DB_PATH=./data/control_horario.db
+DATABASE_URL="file:./prisma/shift.db"
 
 # Environment
 NODE_ENV=development
@@ -296,7 +296,7 @@ echo "Response: " . $response . "\n";
 ```bash
 # .env (production)
 JWT_SECRET=very-secure-randomly-generated-key
-DB_PATH=/var/lib/shift/control_horario.db
+DATABASE_URL="file:/var/lib/shift/shift.db"
 NODE_ENV=production
 BASE_URL=https://shift.yourcompany.com
 PORT=3000
@@ -340,7 +340,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 View all administrative accesses:
 
 ```bash
-sqlite3 ./data/control_horario.db "SELECT * FROM audit_log ORDER BY ts DESC LIMIT 20;"
+sqlite3 ./prisma/shift.db "SELECT * FROM audit_log ORDER BY ts DESC LIMIT 20;"
 ```
 
 ### Usage Statistics
@@ -380,7 +380,7 @@ npm run dev  # development mode with detailed logs
 Connect directly:
 
 ```bash
-sqlite3 ./data/control_horario.db
+sqlite3 ./prisma/shift.db
 
 # Useful commands:
 .tables          # View all tables

@@ -28,8 +28,8 @@ O directamente:
 ### Configuración mediante variables de entorno
 
 ```bash
-# Ruta de la base de datos (por defecto: ./data/control_horario.db)
-DB_PATH=./data/control_horario.db
+# Ruta de la base de datos (por defecto: ./prisma/shift.db)
+DB_PATH=./prisma/shift.db
 
 # Directorio de backups (por defecto: ./backups)
 BACKUP_DIR=./backups
@@ -138,17 +138,17 @@ npm stop  # o el comando que uses
 cd backups
 
 # Descomprimir el backup deseado
-gunzip -k control_horario_YYYYMMDD_HHMMSS.db.gz
+gunzip -k shift_records_YYYYMMDD_HHMMSS.db.gz
 ```
 
 ### 3. Restaurar la base de datos
 
 ```bash
 # Hacer backup del estado actual (por seguridad)
-cp data/control_horario.db data/control_horario.db.before_restore
+cp prisma/shift.db prisma/shift.db.before_restore
 
 # Restaurar el backup
-cp backups/control_horario_YYYYMMDD_HHMMSS.db data/control_horario.db
+cp backups/shift_records_YYYYMMDD_HHMMSS.db prisma/shift.db
 ```
 
 ### 4. Reiniciar la aplicación
@@ -181,7 +181,7 @@ journalctl -u shift-backup.service -n 50
 
 ```bash
 # Descomprimir temporalmente
-gunzip -c backups/control_horario_YYYYMMDD_HHMMSS.db.gz > /tmp/test.db
+gunzip -c backups/shift_records_YYYYMMDD_HHMMSS.db.gz > /tmp/test.db
 
 # Verificar integridad con SQLite
 sqlite3 /tmp/test.db "PRAGMA integrity_check;"
@@ -228,7 +228,7 @@ RETENTION_DAYS=2555 ./scripts/backup.sh
 Verifica que la ruta en `.env` o `DB_PATH` sea correcta:
 
 ```bash
-ls -l data/control_horario.db
+ls -l prisma/shift.db
 ```
 
 ### Error: "No space left on device"

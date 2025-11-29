@@ -11,21 +11,22 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"backup": "./scripts/backup.sh",
+		"seed:appdev": "node ./scripts/seed-appdev-users.mjs",
 		"backup:help": "cat ./scripts/BACKUP_README.md"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.47.1",
 		"@sveltejs/vite-plugin-svelte": "^6.2.1",
+		"prisma": "^6.4.1",
 		"svelte": "^5.41.0",
 		"svelte-check": "^4.3.3",
 		"typescript": "^5.9.3",
 		"vite": "^7.1.10"
 	},
 	"dependencies": {
-		"@types/better-sqlite3": "^7.6.13",
+		"@prisma/client": "^6.4.1",
 		"@types/jsonwebtoken": "^9.0.10",
-		"better-sqlite3": "^12.4.6",
 		"jose": "^6.1.1",
 		"jsonwebtoken": "^9.0.2"
 	}

@@ -1,5 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { queries } from '$lib/server/db';
+import { serializeTimeEvent } from '$lib/server/db/serializers';
 import { requireAuth } from '$lib/server/auth';
 
 /**
@@ -9,27 +10,26 @@ import { requireAuth } from '$lib/server/auth';
 export const GET: RequestHandler = async ({ locals }) => {
 	try {
 		// User is authenticated by hooks.server.ts
-		const user = locals.user;
-		requireAuth(user);
+		const user = requireAuth(locals.user ?? null);
 
 		// Get latest event
-		const latestEvent = queries.getLatestEventByUser(user.id);
+		const latestEvent = await queries.getLatestEventByUser(user.id);
 
 		// Determine status
 		let status: 'clocked_out' | 'clocked_in' | 'on_pause' = 'clocked_out';
 		let nextAction: 'in' | 'out' | 'pause_start' | 'pause_end' = 'in';
 
 		if (latestEvent) {
-			if (latestEvent.event_type === 'in') {
+			if (latestEvent.eventType === 'in') {
 				status = 'clocked_in';
 				nextAction = 'out'; // Can clock out or start pause
-			} else if (latestEvent.event_type === 'pause_start') {
+			} else if (latestEvent.eventType === 'pause_start') {
 				status = 'on_pause';
 				nextAction = 'pause_end';
-			} else if (latestEvent.event_type === 'pause_end') {
+			} else if (latestEvent.eventType === 'pause_end') {
 				status = 'clocked_in';
 				nextAction = 'out';
-			} else if (latestEvent.event_type === 'out') {
+			} else if (latestEvent.eventType === 'out') {
 				status = 'clocked_out';
 				nextAction = 'in';
 			}
@@ -39,7 +39,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 			success: true,
 			status,
 			nextAction,
-			latestEvent: latestEvent || null
+			latestEvent: latestEvent ? serializeTimeEvent(latestEvent) : null
 		});
 	} catch (error) {
 		console.error('Get status error:', error);

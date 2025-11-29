@@ -23,7 +23,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// Check if user exists
-		let user = queries.getUserByEmail(email);
+		let user = await queries.getUserByEmail(email);
 
 		// If user doesn't exist, create one
 		if (!user) {
@@ -31,8 +31,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				return json({ error: 'Name is required for new users' }, { status: 400 });
 			}
 
-			const userId = queries.createUser(email, name, role || 'worker');
-			user = queries.getUserById(userId);
+			const userId = await queries.createUser(email, name, role || 'worker');
+			user = await queries.getUserById(userId);
 
 			if (!user) {
 				return json({ error: 'Failed to create user' }, { status: 500 });
