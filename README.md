@@ -85,8 +85,8 @@ Create a `.env` file in the project root:
 # JWT Secret (must match Placenet in production)
 JWT_SECRET=your-very-secure-secret-key-change-in-production
 
-# Database path
-DB_PATH=./data/control_horario.db
+# Database URL for Prisma (SQLite)
+DATABASE_URL="file:./prisma/shift.db"
 
 # Port (optional, default 5173 in dev)
 PORT=3000
@@ -200,7 +200,7 @@ Headers: { "Authorization": "Bearer <token>" }
 
 ```bash
 # Connect to database
-sqlite3 ./data/control_horario.db
+sqlite3 ./prisma/shift.db
 
 # View all events
 SELECT * FROM time_events ORDER BY ts DESC LIMIT 10;
@@ -221,13 +221,13 @@ Records must be kept for **minimum 4 years** according to Spanish legislation.
 
 ```bash
 # Manual backup
-cp ./data/control_horario.db ./backups/control_horario_$(date +%Y%m%d).db
+cp ./prisma/shift.db ./backups/shift_records_$(date +%Y%m%d).db
 
 # Backup with cron (daily at 2 AM)
-0 2 * * * cp /path/to/shift/data/control_horario.db /path/to/backups/backup_$(date +\%Y\%m\%d).db
+0 2 * * * cp /path/to/shift/prisma/shift.db /path/to/backups/backup_$(date +\%Y\%m\%d).db
 
 # Backup with compression
-tar -czf backup_$(date +%Y%m%d).tar.gz ./data/
+tar -czf backup_$(date +%Y%m%d).tar.gz ./prisma/shift.db
 ```
 
 ## Legal Compliance
@@ -256,7 +256,7 @@ curl -X POST http://localhost:5173/api/auth/login \
 # Verify that triggers work
 npm run dev
 # In another terminal:
-sqlite3 ./data/control_horario.db
+sqlite3 ./prisma/shift.db
 
 # Try to modify a record (should fail)
 sqlite> UPDATE time_events SET event_type = 'modified' WHERE id = 1;

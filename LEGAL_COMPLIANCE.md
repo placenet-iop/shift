@@ -138,7 +138,7 @@ curl -H "Authorization: Bearer TOKEN" \
 JWT_SECRET=your-secure-secret-key
 
 # Database path
-DB_PATH=./data/control_horario.db
+DATABASE_URL="file:./shift.db"
 
 # Server port
 PORT=3000
@@ -156,7 +156,7 @@ In production, the system MUST be served via HTTPS to:
 ### Recommended Backup
 ```bash
 # Daily database backup
-cp ./data/control_horario.db ./backups/control_horario_$(date +%Y%m%d).db
+cp ./prisma/shift.db ./backups/shift_records_$(date +%Y%m%d).db
 
 # Backup with compression
 tar -czf backup_$(date +%Y%m%d).tar.gz ./data/

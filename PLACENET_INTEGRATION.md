@@ -13,7 +13,7 @@ En el archivo `.env` de Shift:
 JWT_SECRET=tu-clave-secreta-compartida
 
 # Database
-DB_PATH=./data/control_horario.db
+DATABASE_URL="file:./shift.db"
 
 # Entorno
 NODE_ENV=production
