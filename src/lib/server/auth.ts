@@ -15,10 +15,13 @@ export interface JWTPayload {
 	avatar_id?: string;
 	avatar_name?: string;
 	avatar_email?: string;
+	avatar_image?: string;
+	avatar_tags?: string;
 	domain_id?: string;
 	domain_name?: string;
 	domain_tags?: string[];
 	tags?: string[];
+	tenant_id?: string;
 
 	// JWT standard fields
 	iat?: number;
@@ -148,6 +151,10 @@ export function generateToken(user: User): string {
 	};
 
 	const secret = getJWTSecret();
+	if (!secret || secret.trim() === '') {
+		throw new Error('JWT_SECRET is not set. Please set it in your .env file or shift.json config.');
+	}
+
 	return jwt.sign(payload, secret, {
 		expiresIn: '8h' // 8 hours expiration
 	});
@@ -165,22 +172,68 @@ export async function getUserFromToken(token: string): Promise<User | null> {
 	const payload = await verifyToken(token);
 
 	if (!payload || !payload.email) {
+		console.log('[Auth] No payload or email in token');
 		return null;
 	}
 
 	// Try to get user by email first (for Placenet integration)
-	let user = queries.getUserByEmail(payload.email);
+	let user: User | null = null;
+	try {
+		user = await queries.getUserByEmail(payload.email);
+	} catch (error) {
+		console.error('[Auth] Error getting user by email:', error);
+		return null;
+	}
 
 	// If user doesn't exist and we have valid payload, create it (auto-provision from Placenet)
 	if (!user && payload.name && payload.email) {
-		const userId = queries.createUser(
-			payload.email,
-			payload.name,
-			payload.role || 'worker',
-			payload.domain_id,
-			payload.domain_name
-		);
-		user = queries.getUserById(userId);
+		try {
+			console.log(`[Auth] Auto-creating user: ${payload.email} (${payload.name})`);
+			const userId = await queries.createUser(
+				payload.email,
+				payload.name,
+				payload.role || 'worker',
+				payload.domain_id,
+				payload.domain_name
+			);
+			user = await queries.getUserById(userId);
+			if (user) {
+				console.log(`[Auth] Successfully created user: ${user.email} (ID: ${user.id})`);
+			} else {
+				console.error(`[Auth] Failed to retrieve created user with ID: ${userId}`);
+			}
+		} catch (error) {
+			console.error('[Auth] Error creating user:', error);
+			return null;
+		}
+	} else if (user) {
+		// Update user role and domain info if token has different information
+		// This ensures users get the correct role when logging in with admin tokens
+		const updates: { role?: 'worker' | 'admin'; domain_id?: string; domain_name?: string; name?: string } = {};
+		
+		// Always update role if payload has a role (even if it's the same, to ensure it's correct)
+		if (payload.role && payload.role !== user.role) {
+			updates.role = payload.role;
+			console.log(`[Auth] Updating user ${user.email} role from ${user.role} to ${payload.role}`);
+		}
+		if (payload.domain_id !== user.domainId) {
+			updates.domain_id = payload.domain_id;
+		}
+		if (payload.domain_name !== user.domainName) {
+			updates.domain_name = payload.domain_name;
+		}
+		if (payload.name && payload.name !== user.name) {
+			updates.name = payload.name;
+		}
+
+		if (Object.keys(updates).length > 0) {
+			await queries.updateUser(user.id, updates);
+			// Reload user to get updated data
+			user = await queries.getUserById(user.id);
+			if (user && updates.role) {
+				console.log(`[Auth] User ${user.email} role updated to ${user.role}`);
+			}
+		}
 	}
 
 	// If still no user or user is inactive, return null

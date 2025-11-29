@@ -1,5 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { queries } from '$lib/server/db';
+import { serializeTimeEvent } from '$lib/server/db/serializers';
 import { requireAuth, getClientIP } from '$lib/server/auth';
 
 /**
@@ -13,8 +14,7 @@ import { requireAuth, getClientIP } from '$lib/server/auth';
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
 		// User is authenticated by hooks.server.ts
-		const user = locals.user;
-		requireAuth(user);
+		const user = requireAuth(locals.user ?? null);
 
 		// Parse request body
 		const body = await request.json();
@@ -32,11 +32,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// Get latest event to validate state transitions
-		const latestEvent = queries.getLatestEventByUser(user.id);
+		const latestEvent = await queries.getLatestEventByUser(user.id);
 
 		// Validate state transitions
 		if (event_type === 'in') {
-			if (latestEvent && (latestEvent.event_type === 'in' || latestEvent.event_type === 'pause_start')) {
+			if (latestEvent && latestEvent.eventType !== 'out') {
 				return json(
 					{
 						error: 'Cannot clock in. You are already clocked in.'
@@ -45,7 +45,11 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				);
 			}
 		} else if (event_type === 'out') {
-			if (!latestEvent || latestEvent.event_type === 'out') {
+			if (
+				!latestEvent ||
+				latestEvent.eventType === 'out' ||
+				latestEvent.eventType === 'pause_start'
+			) {
 				return json(
 					{
 						error: 'Cannot clock out. You are not clocked in.'
@@ -54,7 +58,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				);
 			}
 		} else if (event_type === 'pause_start') {
-			if (!latestEvent || latestEvent.event_type !== 'in') {
+			if (
+				!latestEvent ||
+				(latestEvent.eventType !== 'in' && latestEvent.eventType !== 'pause_end')
+			) {
 				return json(
 					{
 						error: 'Cannot start pause. You must be clocked in first.'
@@ -63,7 +70,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 				);
 			}
 		} else if (event_type === 'pause_end') {
-			if (!latestEvent || latestEvent.event_type !== 'pause_start') {
+			if (!latestEvent || latestEvent.eventType !== 'pause_start') {
 				return json(
 					{
 						error: 'Cannot end pause. You must start a pause first.'
@@ -79,7 +86,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		// Create time event
 		const timestamp = new Date().toISOString();
-		const eventId = queries.createTimeEvent(
+		const event = await queries.createTimeEvent(
 			user.id,
 			event_type,
 			timestamp,
@@ -90,13 +97,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		return json({
 			success: true,
-			event: {
-				id: eventId,
-				user_id: user.id,
-				event_type,
-				ts: timestamp,
-				source: 'web'
-			}
+			event: serializeTimeEvent(event)
 		});
 	} catch (error) {
 		console.error('Clock error:', error);

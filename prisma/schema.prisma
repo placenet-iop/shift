@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  worker
+  admin
+}
+
+enum TimeEventType {
+  in
+  out
+  pause_start
+  pause_end
+}
+
+enum TimeEventSource {
+  web
+  mobile
+  kiosk
+}
+
+model User {
+  id                 Int         @id @default(autoincrement())
+  email              String      @unique
+  name               String
+  role               Role        @default(worker)
+  domainId           String?     @map("domain_id")
+  domainName         String?     @map("domain_name")
+  active             Boolean     @default(true)
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  events             TimeEvent[]
+  auditLogs          AuditLog[]  @relation("AuditLogPerformer")
+  targetedAuditLogs  AuditLog[]  @relation("AuditLogTarget")
+
+  @@map("users")
+}
+
+model TimeEvent {
+  id         Int             @id @default(autoincrement())
+  userId     Int             @map("user_id")
+  user       User            @relation(fields: [userId], references: [id])
+  eventType  TimeEventType   @map("event_type")
+  ts         DateTime
+  source     TimeEventSource @default(web)
+  ip         String?
+  userAgent  String?         @map("user_agent")
+  meta       Json?           @map("meta")
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  @@index([userId, ts], map: "idx_time_events_user_ts")
+  @@index([createdAt], map: "idx_time_events_created")
+  @@map("time_events")
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  adminUserId  Int      @map("admin_user_id")
+  adminUser    User     @relation("AuditLogPerformer", fields: [adminUserId], references: [id])
+  action       String
+  targetUserId Int?     @map("target_user_id")
+  targetUser   User?    @relation("AuditLogTarget", fields: [targetUserId], references: [id])
+  details      Json?
+  ip           String?
+  ts           DateTime  @default(now())
+
+  @@index([ts], map: "idx_audit_log_ts")
+  @@map("audit_log")
+}
+
