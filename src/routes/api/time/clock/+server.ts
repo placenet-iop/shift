@@ -84,7 +84,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const ip = getClientIP(request);
 		const userAgent = request.headers.get('user-agent') || undefined;
 
-		// Create time event
+		// Create time event with snapshot of user data
 		const timestamp = new Date().toISOString();
 		const event = await queries.createTimeEvent(
 			user.id,
@@ -92,7 +92,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			timestamp,
 			'web', // Source - could be 'mobile' or 'kiosk' in the future
 			ip,
-			userAgent
+			userAgent,
+			undefined, // meta
+			user.name, // avatarName
+			user.email, // avatarEmail
+			user.id, // avatarId
+			user.domainId || undefined, // domainId
+			user.domainName || undefined // domainName
 		);
 
 		return json({

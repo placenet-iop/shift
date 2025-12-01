@@ -103,7 +103,7 @@
 
 			<section>
 				<h2>7. Acceso y Consulta de Registros</h2>
-				<p><strong>Trabajadores:</strong> Pueden consultar su historial completo en cualquier momento a través de la sección "Ver Historial".</p>
+				<p><strong>Trabajadores:</strong> Pueden consultar su historial completo en cualquier momento a través de la sección "Mis registros".</p>
 				<p><strong>Empresa:</strong> Los administradores pueden acceder a los registros de todos los trabajadores y exportarlos en formato CSV o JSON.</p>
 				<p><strong>Inspección de Trabajo:</strong> La empresa facilitará los registros cuando sean requeridos mediante exportación de datos.</p>
 			</section>

@@ -36,7 +36,10 @@
 			if (window.__authToken) {
 				const url = typeof input === 'string' ? input : (input as Request).url;
 				if (new URL(url, window.location.origin).origin === window.location.origin) {
-					init.headers = { ...init.headers, 'X-Auth-Token': window.__authToken };
+					// Create a new init object with headers
+					const headers = new Headers(init.headers);
+					headers.set('x-auth-token', window.__authToken);
+					init = { ...init, headers };
 				}
 			}
 			return originalFetch(input, init);

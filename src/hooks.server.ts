@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { verifyToken, getUserFromToken } from '$lib/server/auth';
 
-const publicRoutes = ['/', '/auth', '/dev', '/.well-known/placenet/views'];
+const publicRoutes = ['/', '/auth', '/dev', '/.well-known/placenet/views', '/api/config/theme'];
 
 export const handle = async ({ event, resolve }) => {
 	// Allow public routes

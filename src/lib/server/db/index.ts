@@ -83,7 +83,12 @@ export const queries = {
 		source: 'web' | 'mobile' | 'kiosk',
 		ip?: string,
 		userAgent?: string,
-		meta?: object
+		meta?: object,
+		avatarName?: string,
+		avatarEmail?: string,
+		avatarId?: number,
+		domainId?: string,
+		domainName?: string
 	): Promise<TimeEvent> => {
 		return prisma.timeEvent.create({
 			data: {
@@ -93,7 +98,12 @@ export const queries = {
 				source,
 				ip: ip || null,
 				userAgent: userAgent || null,
-				meta: meta ?? undefined
+				meta: meta ?? undefined,
+				avatarName: avatarName || null,
+				avatarEmail: avatarEmail || null,
+				avatarId: avatarId || null,
+				domainId: domainId || null,
+				domainName: domainName || null
 			}
 		});
 	},

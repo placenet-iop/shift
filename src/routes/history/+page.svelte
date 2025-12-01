@@ -2,12 +2,8 @@
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import { translate, formatDateTime as formatDateTimeStore, locale } from '$lib/i18n';
-	import { calculateWeeklySummaries, type WeeklySummary } from '$lib/utils/time';
 
-	// Make translation function reactive
 	let t = $derived.by(() => $translate);
-	
-	// Make formatDateTime reactive
 	let formatDateTime = $derived.by(() => $formatDateTimeStore);
 	const localeCode = $derived.by(() => ($locale === 'es' ? 'es-ES' : 'en-US'));
 
@@ -20,7 +16,7 @@
 
 	const now = new Date();
 	const defaultToDate = formatInputDate(now);
-	const defaultFromDate = formatInputDate(new Date(now.getFullYear(), now.getMonth(), 1));
+	const defaultFromDate = formatInputDate(now); // Default to today
 
 	let token = $state('');
 	let events = $state<any[]>([]);
@@ -28,9 +24,75 @@
 	let error = $state('');
 	let fromDate = $state(defaultFromDate);
 	let toDate = $state(defaultToDate);
+	let showFilters = $state(false);
 	let isAdmin = $state(false);
 	let users = $state<any[]>([]);
 	let selectedUserId = $state('');
+
+	// Calculate daily totals
+	interface DailyStats {
+		totalWorked: number; // in minutes
+		totalBreak: number; // in minutes
+		periods: Array<{ start: string; end: string; type: 'work' | 'break' }>;
+	}
+
+	let dailyStats = $derived.by(() => {
+		if (events.length === 0) return null;
+
+		const stats: DailyStats = {
+			totalWorked: 0,
+			totalBreak: 0,
+			periods: []
+		};
+
+		let lastIn: string | null = null;
+		let lastPauseStart: string | null = null;
+
+		// Sort events by time
+		const sortedEvents = [...events].sort(
+			(a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()
+		);
+
+		for (const event of sortedEvents) {
+			if (event.event_type === 'in') {
+				lastIn = event.ts;
+			} else if (event.event_type === 'out' && lastIn) {
+				const duration =
+					(new Date(event.ts).getTime() - new Date(lastIn).getTime()) / (1000 * 60);
+				stats.totalWorked += duration;
+				stats.periods.push({ start: lastIn, end: event.ts, type: 'work' });
+				lastIn = null;
+			} else if (event.event_type === 'pause_start' && lastIn) {
+				const duration =
+					(new Date(event.ts).getTime() - new Date(lastIn).getTime()) / (1000 * 60);
+				stats.totalWorked += duration;
+				stats.periods.push({ start: lastIn, end: event.ts, type: 'work' });
+				lastPauseStart = event.ts;
+				lastIn = null;
+			} else if (event.event_type === 'pause_end' && lastPauseStart) {
+				const duration =
+					(new Date(event.ts).getTime() - new Date(lastPauseStart).getTime()) / (1000 * 60);
+				stats.totalBreak += duration;
+				stats.periods.push({ start: lastPauseStart, end: event.ts, type: 'break' });
+				lastIn = event.ts;
+				lastPauseStart = null;
+			}
+		}
+
+		// If still clocked in, calculate up to now
+		if (lastIn) {
+			const duration = (new Date().getTime() - new Date(lastIn).getTime()) / (1000 * 60);
+			stats.totalWorked += duration;
+		}
+
+		return stats;
+	});
+
+	function formatMinutes(minutes: number): string {
+		const hours = Math.floor(minutes / 60);
+		const mins = Math.round(minutes % 60);
+		return `${hours}h ${mins}m`;
+	}
 
 	onMount(() => {
 		if (browser) {
@@ -40,7 +102,7 @@
 				return;
 			}
 
-			// Decode token to check if user is admin
+			// Decode token
 			try {
 				const base64Url = token.split('.')[1];
 				const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -51,12 +113,14 @@
 						.join('')
 				);
 				const payload = JSON.parse(jsonPayload);
-				isAdmin = payload.role === 'admin' || payload.domain_tags?.includes('admin') || payload.domain_tags?.includes('shift_admin');
+				isAdmin =
+					payload.role === 'admin' ||
+					payload.domain_tags?.includes('admin') ||
+					payload.domain_tags?.includes('shift_admin');
 			} catch (e) {
 				console.error('Failed to decode token:', e);
 			}
 
-			// If admin, load users list
 			if (isAdmin) {
 				loadUsers();
 			}
@@ -64,24 +128,6 @@
 			loadEvents();
 		}
 	});
-
-	function clampToToday(value: string): string {
-		if (!value) return defaultToDate;
-		return value > defaultToDate ? defaultToDate : value;
-	}
-
-	function handleFromDateChange(value: string) {
-		const nextValue = value || defaultFromDate;
-		fromDate = nextValue > toDate ? toDate : nextValue;
-	}
-
-	function handleToDateChange(value: string) {
-		const nextValue = clampToToday(value || defaultToDate);
-		toDate = nextValue;
-		if (fromDate > nextValue) {
-			fromDate = nextValue;
-		}
-	}
 
 	async function loadUsers() {
 		try {
@@ -100,14 +146,12 @@
 			loading = true;
 			error = '';
 
-			// Use admin endpoint if admin, otherwise use regular endpoint
 			let url = isAdmin ? '/api/admin/events' : '/api/time/events';
 			const params = new URLSearchParams();
 
 			if (fromDate) params.append('from', new Date(fromDate).toISOString());
 			if (toDate) params.append('to', new Date(toDate + 'T23:59:59').toISOString());
-			
-			// If admin and a user is selected, filter by that user
+
 			if (isAdmin && selectedUserId) {
 				params.append('user_id', selectedUserId);
 			}
@@ -115,7 +159,6 @@
 			if (params.toString()) url += '?' + params.toString();
 
 			const response = await fetch(url);
-
 			const data = await response.json();
 
 			if (data.success) {
@@ -130,16 +173,14 @@
 		}
 	}
 
-	function formatDateTimeLocal(isoDate: string): string {
-		return formatDateTime(isoDate, {
-			weekday: 'short',
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit',
-			second: '2-digit'
-		});
+	function getEventIcon(type: string): string {
+		const icons: Record<string, string> = {
+			in: '🟢',
+			out: '🔴',
+			pause_start: '⏸️',
+			pause_end: '▶️'
+		};
+		return icons[type] || '⚪';
 	}
 
 	function getEventLabel(type: string): string {
@@ -151,83 +192,50 @@
 		};
 		return labels[type] || type;
 	}
-
-	function getEventColor(type: string): string {
-		const colors: Record<string, string> = {
-			in: '#16a34a',
-			out: '#dc2626',
-			pause_start: '#ea580c',
-			pause_end: '#2563eb'
-		};
-		return colors[type] || '#6b7280';
-	}
-
-	function groupEventsByDate(evts: any[]): Record<string, any[]> {
-		const grouped: Record<string, any[]> = {};
-		evts.forEach((event) => {
-			const date = event.ts.split('T')[0];
-			if (!grouped[date]) grouped[date] = [];
-			grouped[date].push(event);
-		});
-		return grouped;
-	}
-
-	let sortedEvents = $derived([...events].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()));
-	let groupedEvents = $derived(groupEventsByDate(sortedEvents));
-	let sortedDates = $derived(Object.keys(groupedEvents).sort().reverse());
-	let weeklySummaries = $derived(calculateWeeklySummaries(events));
-
-	function formatWeekRange(summary: WeeklySummary): string {
-		const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-		const start = new Date(summary.weekStart);
-		const end = new Date(summary.weekEnd);
-		return `${start.toLocaleDateString(localeCode, options)} – ${end.toLocaleDateString(localeCode, options)}`;
-	}
 </script>
 
 <main>
 	<div class="container">
 		<header>
-			<h1>{t('history.title')}</h1>
-			<a href="/" class="back-link">{t('common.backToHome')}</a>
+			<h1>📊 {t('history.title')}</h1>
+			<a href="/" class="back-link">← {t('common.backToHome')}</a>
 		</header>
 
-		<div class="filters">
-			{#if isAdmin}
-				<div class="filter-group">
-					<label for="worker">{t('admin.filters.user')}</label>
-					<select id="worker" bind:value={selectedUserId} onchange={() => loadEvents()}>
-						<option value="">{t('admin.filters.allUsers')}</option>
-						{#each users as user}
-							<option value={user.id}>{user.name} ({user.email})</option>
-						{/each}
-					</select>
-				</div>
-			{/if}
-			<div class="filter-group">
-				<label for="from">{t('history.from')}</label>
-				<input
-					type="date"
-					id="from"
-					bind:value={fromDate}
-					max={toDate}
-					onchange={(event) => handleFromDateChange(event.currentTarget.value)}
-				/>
-			</div>
-			<div class="filter-group">
-				<label for="to">{t('history.to')}</label>
-				<input
-					type="date"
-					id="to"
-					bind:value={toDate}
-					max={defaultToDate}
-					onchange={(event) => handleToDateChange(event.currentTarget.value)}
-				/>
-			</div>
-			<button onclick={loadEvents} disabled={loading}>
-				{loading ? t('common.loading') : t('buttons.search')}
+		<!-- Filter Toggle Button -->
+		<div class="filter-toggle-container">
+			<button class="filter-toggle-btn" onclick={() => (showFilters = !showFilters)}>
+				<span>🔍 Filtros</span>
+				<span class="toggle-icon">{showFilters ? '▼' : '▶'}</span>
 			</button>
 		</div>
+
+		<!-- Collapsible Filters -->
+		{#if showFilters}
+			<div class="filters-panel">
+				{#if isAdmin}
+					<div class="filter-group">
+						<label for="worker">{t('admin.filters.user')}</label>
+						<select id="worker" bind:value={selectedUserId} onchange={() => loadEvents()}>
+							<option value="">{t('admin.filters.allUsers')}</option>
+							{#each users as user}
+								<option value={user.id}>{user.name} ({user.email})</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
+				<div class="filter-group">
+					<label for="from">{t('history.from')}</label>
+					<input type="date" id="from" bind:value={fromDate} max={toDate} />
+				</div>
+				<div class="filter-group">
+					<label for="to">{t('history.to')}</label>
+					<input type="date" id="to" bind:value={toDate} max={formatInputDate(now)} />
+				</div>
+				<button class="btn-apply" onclick={loadEvents} disabled={loading}>
+					{loading ? t('common.loading') : 'Aplicar Filtros'}
+				</button>
+			</div>
+		{/if}
 
 		{#if error}
 			<div class="alert alert-error">{error}</div>
@@ -237,88 +245,66 @@
 			<div class="loading">{t('history.loadingRecords')}</div>
 		{:else if events.length === 0}
 			<div class="empty">
-				<p>{t('history.noRecords')}</p>
+				<p>📭 {t('history.noRecords')}</p>
 			</div>
 		{:else}
-			<div class="summary">
-				<div class="summary-info">
-					<p>{t('history.totalRecords')} <strong>{events.length}</strong></p>
-					{#if events.length > 0 && events[0].user_name}
-						<p>{t('history.worker')} <strong>{events[0].user_name}</strong></p>
-					{/if}
-					{#if events.length > 0 && events[0].domain_name}
-						<p>{t('history.domain')} <strong>{events[0].domain_name}</strong> ({events[0].domain_id || '-'})</p>
-					{/if}
-				</div>
-			</div>
-
-			{#if weeklySummaries.length > 0}
-				<div class="weekly-summary">
-					<h3>{t('history.weeklySummary')}</h3>
-					<div class="weekly-grid">
-						{#each weeklySummaries as summary}
-							<div class="weekly-card">
-								<div class="week-range">{formatWeekRange(summary)}</div>
-								<div class="week-hours">{summary.totalHours.toFixed(2)}h</div>
+			<!-- Daily Summary Card -->
+			{#if dailyStats}
+				<div class="summary-card">
+					<h2>Resumen del Período</h2>
+					<div class="stats-grid">
+						<div class="stat-item">
+							<div class="stat-icon">⏱️</div>
+							<div class="stat-content">
+								<div class="stat-label">Tiempo Trabajado</div>
+								<div class="stat-value">{formatMinutes(dailyStats.totalWorked)}</div>
 							</div>
-						{/each}
+						</div>
+						<div class="stat-item">
+							<div class="stat-icon">☕</div>
+							<div class="stat-content">
+								<div class="stat-label">Tiempo Descanso</div>
+								<div class="stat-value">{formatMinutes(dailyStats.totalBreak)}</div>
+							</div>
+						</div>
+						<div class="stat-item">
+							<div class="stat-icon">📝</div>
+							<div class="stat-content">
+								<div class="stat-label">Total Registros</div>
+								<div class="stat-value">{events.length}</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			{/if}
 
-			<div class="events-list">
-				{#each sortedDates as date}
-					<div class="date-group">
-						<h3 class="date-header">
-							{new Date(date).toLocaleDateString($locale === 'es' ? 'es-ES' : 'en-US', {
-								weekday: 'long',
-								day: 'numeric',
-								month: 'long',
-								year: 'numeric'
-							})}
-						</h3>
-						<div class="events">
-							{#each groupedEvents[date] as event}
-								<div class="event-card">
-									<div
-										class="event-type"
-										style="background-color: {getEventColor(event.event_type)}"
-									>
-										{getEventLabel(event.event_type)}
-									</div>
-									<div class="event-details">
-										<div class="event-time">
-											{new Date(event.ts).toLocaleTimeString($locale === 'es' ? 'es-ES' : 'en-US', {
-												hour: '2-digit',
-												minute: '2-digit',
-												second: '2-digit'
-											})}
-										</div>
-										<div class="event-meta">
-											{#if event.domain_name}
-												<span class="domain-badge">
-													<strong>{event.domain_name}</strong>
-													{#if event.domain_id}
-														<span class="domain-id">({event.domain_id})</span>
-													{/if}
-												</span>
-											{/if}
-											<span class="source-badge">{event.source}</span>
-										</div>
-									</div>
+			<!-- Event List -->
+			<div class="events-container">
+				<h3>Registros</h3>
+				<div class="events-list">
+					{#each events.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime()) as event}
+						<div class="event-row">
+							<div class="event-icon">{getEventIcon(event.event_type)}</div>
+							<div class="event-info">
+								<div class="event-label">{getEventLabel(event.event_type)}</div>
+								<div class="event-time">
+									{new Date(event.ts).toLocaleTimeString(localeCode, {
+										hour: '2-digit',
+										minute: '2-digit'
+									})}
 								</div>
-							{/each}
+							</div>
+							<div class="event-date">
+								{new Date(event.ts).toLocaleDateString(localeCode, {
+									day: 'numeric',
+									month: 'short'
+								})}
+							</div>
 						</div>
-					</div>
-				{/each}
+					{/each}
+				</div>
 			</div>
 		{/if}
-
-		<div class="legal-footer">
-			<a href="/privacy" class="legal-link">{t('legal.privacyPolicy')}</a>
-			<span class="separator">•</span>
-			<a href="/legal" class="legal-link">{t('legal.legalNotice')}</a>
-		</div>
 	</div>
 </main>
 
@@ -326,17 +312,17 @@
 	:global(body) {
 		margin: 0;
 		padding: 0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-		background: #f3f4f6;
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		background: #f9fafb;
 	}
 
 	main {
 		min-height: 100vh;
-		padding: 2rem;
+		padding: 1.5rem;
 	}
 
 	.container {
-		max-width: 900px;
+		max-width: 600px;
 		margin: 0 auto;
 	}
 
@@ -344,305 +330,248 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 2rem;
+		margin-bottom: 1.5rem;
 	}
 
 	h1 {
-		font-size: 2rem;
+		font-size: 1.75rem;
 		color: #111827;
 		margin: 0;
+		font-weight: 700;
 	}
 
 	.back-link {
-		color: #2563eb;
+		color: #6b7280;
 		text-decoration: none;
 		font-weight: 500;
+		font-size: 0.9rem;
 	}
 
 	.back-link:hover {
-		text-decoration: underline;
+		color: #111827;
 	}
 
-	.filters {
+	/* Filter Toggle */
+	.filter-toggle-container {
+		margin-bottom: 1rem;
+	}
+
+	.filter-toggle-btn {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1rem;
+		background: white;
+		border: 1px solid #e5e7eb;
+		border-radius: 12px;
+		font-weight: 600;
+		color: #374151;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.filter-toggle-btn:hover {
+		background: #f9fafb;
+		border-color: #d1d5db;
+	}
+
+	.toggle-icon {
+		font-size: 0.75rem;
+		transition: transform 0.2s;
+	}
+
+	/* Filters Panel */
+	.filters-panel {
 		background: white;
 		padding: 1.5rem;
-		border-radius: 12px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		border-radius: 16px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+		margin-bottom: 1.5rem;
 		display: flex;
+		flex-direction: column;
 		gap: 1rem;
-		align-items: flex-end;
-		margin-bottom: 2rem;
+		animation: slideDown 0.3s ease-out;
+	}
+
+	@keyframes slideDown {
+		from {
+			opacity: 0;
+			transform: translateY(-10px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.filter-group {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		flex: 1;
 	}
 
 	label {
-		font-weight: 500;
+		font-weight: 600;
 		color: #374151;
 		font-size: 0.875rem;
 	}
 
 	input[type='date'],
 	select {
-		padding: 0.5rem;
+		padding: 0.75rem;
 		border: 1px solid #d1d5db;
-		border-radius: 6px;
+		border-radius: 8px;
 		font-size: 1rem;
-		background: white;
 	}
 
-	button {
-		padding: 0.5rem 1.5rem;
-		border: none;
-		border-radius: 6px;
-		background: #2563eb;
+	.btn-apply {
+		padding: 0.75rem;
+		background: var(--color-primary, #635FE5);
 		color: white;
-		font-size: 1rem;
-		font-weight: 500;
+		border: none;
+		border-radius: 8px;
+		font-weight: 600;
 		cursor: pointer;
-		transition: background 0.2s;
 	}
 
-	button:hover:not(:disabled) {
-		background: #1d4ed8;
+	.btn-apply:hover:not(:disabled) {
+		filter: brightness(0.9);
 	}
 
-	button:disabled {
-		opacity: 0.5;
+	.btn-apply:disabled {
+		opacity: 0.6;
 		cursor: not-allowed;
 	}
 
-	.alert {
-		padding: 1rem;
-		border-radius: 8px;
-		margin-bottom: 2rem;
-	}
-
-	.alert-error {
-		background: #fee2e2;
-		color: #991b1b;
-		border: 1px solid #fecaca;
-	}
-
-	.loading {
-		text-align: center;
-		padding: 3rem;
-		color: #6b7280;
-		font-size: 1.125rem;
-	}
-
-	.empty {
-		text-align: center;
-		padding: 3rem;
-		background: white;
-		border-radius: 12px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.empty p {
-		color: #6b7280;
-		font-size: 1.125rem;
-		margin: 0;
-	}
-
-	.summary {
+	/* Summary Card */
+	.summary-card {
 		background: white;
 		padding: 1.5rem;
-		border-radius: 12px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+		border-radius: 16px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 		margin-bottom: 1.5rem;
 	}
 
-	.summary-info {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1rem;
-	}
-
-	.summary p {
-		margin: 0;
-		color: #374151;
-		padding: 0.5rem;
-		background: #f9fafb;
-		border-radius: 6px;
-	}
-
-	.weekly-summary {
-		background: white;
-		padding: 1.5rem;
-		border-radius: 12px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-		margin-bottom: 1.5rem;
-	}
-
-	.weekly-summary h3 {
-		margin: 0 0 1rem 0;
-		color: #111827;
+	.summary-card h2 {
+		margin: 0 0 1.25rem 0;
 		font-size: 1.1rem;
+		color: #111827;
+		font-weight: 700;
 	}
 
-	.weekly-grid {
+	.stats-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 		gap: 1rem;
 	}
 
-	.weekly-card {
-		background: #f9fafb;
-		border-radius: 10px;
-		padding: 1rem;
-		border-left: 4px solid #667eea;
+	.stat-item {
 		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
+		align-items: center;
+		gap: 1rem;
+		padding: 1rem;
+		background: #f9fafb;
+		border-radius: 12px;
 	}
 
-	.week-range {
-		font-size: 0.95rem;
-		color: #4b5563;
-		font-weight: 600;
+	.stat-icon {
+		font-size: 2rem;
 	}
 
-	.week-hours {
+	.stat-content {
+		flex: 1;
+	}
+
+	.stat-label {
+		font-size: 0.8rem;
+		color: #6b7280;
+		font-weight: 500;
+		margin-bottom: 0.25rem;
+	}
+
+	.stat-value {
 		font-size: 1.5rem;
 		font-weight: 700;
 		color: #111827;
 	}
 
+	/* Events */
+	.events-container {
+		background: white;
+		padding: 1.5rem;
+		border-radius: 16px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+	}
+
+	.events-container h3 {
+		margin: 0 0 1rem 0;
+		font-size: 1rem;
+		color: #111827;
+		font-weight: 700;
+	}
+
 	.events-list {
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
+		gap: 0.5rem;
 	}
 
-	.date-group {
-		background: white;
-		padding: 1.5rem;
-		border-radius: 12px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-
-	.date-header {
-		margin: 0 0 1rem 0;
-		color: #111827;
-		font-size: 1.25rem;
-		text-transform: capitalize;
-		border-bottom: 2px solid #e5e7eb;
-		padding-bottom: 0.5rem;
-	}
-
-	.events {
+	.event-row {
 		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-
-	.event-card {
-		display: flex;
-		gap: 1rem;
-		padding: 1rem;
-		background: #f9fafb;
-		border-radius: 8px;
 		align-items: center;
+		gap: 1rem;
+		padding: 0.875rem;
+		background: #f9fafb;
+		border-radius: 10px;
 	}
 
-	.event-type {
-		padding: 0.5rem 1rem;
-		border-radius: 6px;
-		color: white;
-		font-weight: 600;
-		font-size: 0.875rem;
-		min-width: 120px;
-		text-align: center;
+	.event-icon {
+		font-size: 1.5rem;
 	}
 
-	.event-details {
+	.event-info {
 		flex: 1;
 	}
 
-	.event-time {
-		font-size: 1.25rem;
+	.event-label {
 		font-weight: 600;
 		color: #111827;
-		margin-bottom: 0.25rem;
+		font-size: 0.95rem;
 	}
 
-	.event-meta {
-		display: flex;
-		gap: 1rem;
+	.event-time {
 		font-size: 0.875rem;
 		color: #6b7280;
-		align-items: center;
-		flex-wrap: wrap;
+		font-family: 'Courier New', monospace;
 	}
 
-	.domain-badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		padding: 0.25rem 0.75rem;
-		background: #dbeafe;
-		color: #1e40af;
-		border-radius: 4px;
-		font-size: 0.875rem;
+	.event-date {
+		font-size: 0.8rem;
+		color: #9ca3af;
+		font-weight: 500;
 	}
 
-	.domain-id {
-		opacity: 0.7;
-		font-weight: normal;
+	.alert {
+		padding: 1rem;
+		border-radius: 12px;
+		margin-bottom: 1rem;
 	}
 
-	.source-badge {
-		display: inline-block;
-		padding: 0.25rem 0.5rem;
-		background: #f3f4f6;
-		color: #4b5563;
-		border-radius: 4px;
-		font-size: 0.75rem;
-		text-transform: uppercase;
-		font-weight: 600;
+	.alert-error {
+		background: #fee2e2;
+		color: #991b1b;
+		border: 1px solid #fca5a5;
 	}
 
-	.legal-footer {
-		margin-top: 2rem;
-		padding-top: 1.5rem;
-		border-top: 1px solid #e5e7eb;
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-		justify-content: center;
-		font-size: 0.875rem;
-	}
-
-	.legal-link {
+	.loading,
+	.empty {
+		text-align: center;
+		padding: 3rem;
 		color: #6b7280;
-		text-decoration: none;
-		font-weight: 400;
 	}
 
-	.legal-link:hover {
-		color: #667eea;
-		text-decoration: underline;
-	}
-
-	.separator {
-		color: #d1d5db;
-	}
-
-	@media (max-width: 640px) {
-		.filters {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.event-card {
-			flex-direction: column;
-			align-items: flex-start;
-		}
+	.empty p {
+		font-size: 1.1rem;
+		margin: 0;
 	}
 </style>

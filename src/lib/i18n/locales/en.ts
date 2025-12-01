@@ -45,6 +45,8 @@ export default {
 		clockedOut: 'Clocked Out',
 		clockedIn: 'Clocked In',
 		onBreak: 'On Break',
+		working: 'Working',
+		inactive: 'Inactive',
 		lastRecord: 'Last record:',
 		noRecords: 'No records yet'
 	},
@@ -94,7 +96,7 @@ export default {
 	},
 	admin: {
 		title: 'Admin Panel',
-		subtitle: 'Time Tracking - Administrator View',
+		subtitle: 'Time Tracking - Shift',
 		tabs: {
 			timeRecords: 'Time Records',
 			users: 'Users'

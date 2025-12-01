@@ -52,7 +52,13 @@ model TimeEvent {
   ip         String?
   userAgent  String?         @map("user_agent")
   meta       Json?           @map("meta")
-  createdAt  DateTime        @default(now()) @map("created_at")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  // Snapshot of user data at event time
+  avatarName  String?         @map("avatar_name")
+  avatarEmail String?         @map("avatar_email")
+  avatarId    Int?            @map("avatar_id")
+  domainId    String?         @map("domain_id")
+  domainName  String?         @map("domain_name")
 
   @@index([userId, ts], map: "idx_time_events_user_ts")
   @@index([createdAt], map: "idx_time_events_created")

@@ -24,6 +24,14 @@ interface ShiftConfig {
 			admin_tags: string[];
 		};
 	};
+	ui?: {
+		theme?: {
+			primary_color: string;
+			success_color: string;
+			warning_color: string;
+			danger_color: string;
+		};
+	};
 	features: Record<string, any>;
 	legal: Record<string, any>;
 }

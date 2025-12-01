@@ -86,7 +86,7 @@
 				<h2>7. Derechos de los Trabajadores</h2>
 				<p>Como trabajador, tienes derecho a:</p>
 				<ul>
-					<li><strong>Acceso:</strong> Consultar tus registros de jornada en cualquier momento (sección "Ver Historial")</li>
+					<li><strong>Acceso:</strong> Consultar tus registros de jornada en cualquier momento (sección "Mis registros")</li>
 					<li><strong>Rectificación:</strong> Solicitar la corrección de datos inexactos</li>
 					<li><strong>Supresión:</strong> Limitado por la obligación legal de conservación de 4 años</li>
 					<li><strong>Limitación del tratamiento:</strong> En casos específicos previstos por ley</li>

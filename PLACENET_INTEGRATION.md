@@ -248,7 +248,7 @@ echo "Fichaje: " . $result['success'] . "\n";
 $status = $shift->getStatus($token);
 echo "Estado: " . $status['status'] . "\n";
 
-// Ver historial
+// Mis registros
 $events = $shift->getEvents($token, '2024-01-01T00:00:00Z', '2024-12-31T23:59:59Z');
 echo "Eventos: " . count($events['events']) . "\n";
 

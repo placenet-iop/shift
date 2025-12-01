@@ -42,9 +42,11 @@ export default {
 	},
 	status: {
 		currentStatus: 'Estado Actual',
-		clockedOut: 'Fuera',
-		clockedIn: 'Dentro',
+		clockedOut: 'Inactivo',
+		clockedIn: 'Trabajando',
 		onBreak: 'En Pausa',
+		working: 'Trabajando',
+		inactive: 'Inactivo',
 		lastRecord: 'Último registro:',
 		noRecords: 'Aún no hay registros'
 	},
@@ -53,7 +55,7 @@ export default {
 		clockOut: 'Fichar Salida',
 		startBreak: 'Iniciar Pausa',
 		resumeWork: 'Reanudar Trabajo',
-		viewHistory: 'Ver Historial',
+		viewHistory: 'Mis registros',
 		adminPanel: 'Panel de Administración',
 		exportCSV: 'Exportar CSV',
 		exportJSON: 'Exportar JSON',
@@ -84,7 +86,7 @@ export default {
 		yourRights: 'Sus derechos',
 		rightsText: 'Puede ejercer sus derechos a:',
 		rightsList: {
-			access: 'Acceso: Ver sus registros de tiempo en "Ver Historial"',
+			access: 'Acceso: Ver sus registros de tiempo en "Mis registros"',
 			rectification: 'Rectificación: Solicitar corrección de datos inexactos',
 			portability: 'Portabilidad: Obtener una copia de sus datos'
 		},
@@ -94,7 +96,7 @@ export default {
 	},
 	admin: {
 		title: 'Panel de Administración',
-		subtitle: 'Control Horario - Vista de Administrador',
+		subtitle: 'Control Horario - Shift',
 		tabs: {
 			timeRecords: 'Registros de Tiempo',
 			users: 'Usuarios'

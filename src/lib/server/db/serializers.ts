@@ -8,7 +8,7 @@ export function serializeTimeEvent(event: TimeEvent, user?: User | null): any {
 	return {
 		id: event.id,
 		user_id: event.userId,
-		user_name: user?.name,
+		user_name: event.avatarName || user?.name,
 		event_type: event.eventType,
 		ts: event.ts.toISOString(),
 		source: event.source,
@@ -16,8 +16,12 @@ export function serializeTimeEvent(event: TimeEvent, user?: User | null): any {
 		user_agent: event.userAgent,
 		meta: event.meta,
 		created_at: event.createdAt.toISOString(),
-		domainId: user?.domainId,
-		domainName: user?.domainName
+		// Prefer snapshot data from event, fallback to current user data
+		avatar_name: event.avatarName || user?.name,
+		avatar_email: event.avatarEmail || user?.email,
+		avatar_id: event.avatarId || event.userId,
+		domain_id: event.domainId || user?.domainId,
+		domain_name: event.domainName || user?.domainName
 	};
 }
 
