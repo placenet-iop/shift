@@ -42,8 +42,7 @@ export const GET: RequestHandler = async ({ url, request }) => {
 		const baseUrl = url.origin;
 		const views = [
 			{ path: `${baseUrl}/?token=${encodeURIComponent(token)}`, label: 'Time Clock' },
-			{ path: `${baseUrl}/history?token=${encodeURIComponent(token)}`, label: 'History' },
-			{ path: `${baseUrl}/admin?token=${encodeURIComponent(token)}`, label: 'Admin Panel' }
+			{ path: `${baseUrl}/history?token=${encodeURIComponent(token)}`, label: 'History' }
 		];
 
 		return json(views);
