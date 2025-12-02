@@ -25,3 +25,4 @@ vite.config.ts.timestamp-*
 # Database
 /data
 /backups
+prisma/shift.db
