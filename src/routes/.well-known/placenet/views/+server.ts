@@ -38,12 +38,10 @@ export const GET: RequestHandler = async ({ url, request }) => {
 		}
 
 		// Return views for authenticated admin users
-		// Use absolute URL so dashboard navigates to shift domain, not its own domain
-		const baseUrl = url.origin;
 		const views = [
-			{ path: `${baseUrl}/`, label: 'Time Clock' },
-			{ path: `${baseUrl}/history`, label: 'History' },
-			{ path: `${baseUrl}/admin`, label: 'Admin Panel' }
+			{ path: '/', label: 'Time Clock' },
+			{ path: '/history', label: 'History' },
+			{ path: '/admin', label: 'Admin Panel' }
 		];
 
 		return json(views);
