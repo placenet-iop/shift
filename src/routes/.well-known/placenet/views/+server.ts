@@ -38,10 +38,12 @@ export const GET: RequestHandler = async ({ url, request }) => {
 		}
 
 		// Return views for authenticated admin users
+		// Use absolute URLs with tokens so buttons can navigate directly to the app
+		const baseUrl = url.origin;
 		const views = [
-			{ path: '/', label: 'Time Clock' },
-			{ path: '/history', label: 'History' },
-			{ path: '/admin', label: 'Admin Panel' }
+			{ path: `${baseUrl}/?token=${encodeURIComponent(token)}`, label: 'Time Clock' },
+			{ path: `${baseUrl}/history?token=${encodeURIComponent(token)}`, label: 'History' },
+			{ path: `${baseUrl}/admin?token=${encodeURIComponent(token)}`, label: 'Admin Panel' }
 		];
 
 		return json(views);
