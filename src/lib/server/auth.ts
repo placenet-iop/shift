@@ -33,7 +33,7 @@ export interface JWTPayload {
 let jwksCache: ReturnType<typeof createRemoteJWKSet> | null = null;
 function getJWKS() {
 	if (!jwksCache) {
-		const jwksEndpoint = process.env.JWKS_ENDPOINT || 'https://dev-placenet.fra1.cdn.digitaloceanspaces.com/dev-jwks.json';
+		const jwksEndpoint = import.meta.env.VITE_JWKS_URI || 'https://api.placenet.app/.well-known/jwks.json';
 		jwksCache = createRemoteJWKSet(new URL(jwksEndpoint));
 	}
 	return jwksCache;
