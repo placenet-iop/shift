@@ -43,14 +43,10 @@ export const handle = async ({ event, resolve }) => {
 	// Attach user data to locals
 	event.locals.user = user;
 	event.locals.token = token;
-	event.locals.tenant_id = payload.tenant_id || undefined;
-	event.locals.domain_id = payload.domain_id;
-	event.locals.domain_name = payload.domain_name;
-	event.locals.domain_tags = payload.domain_tags || [];
-	event.locals.avatar_id = payload.avatar_id;
-	event.locals.avatar_name = payload.avatar_name;
-	event.locals.avatar_image = payload.avatar_image || undefined;
-	event.locals.avatar_tags = payload.avatar_tags || undefined;
+	event.locals.tenantId = payload.tenantId;
+	event.locals.domainId = payload.domainId;
+	event.locals.domainName = payload.domainName;
+	event.locals.avatarId = payload.avatarId;
 
 	// Admin routes require admin role
 	if (event.url.pathname.startsWith('/admin') && user.role !== 'admin') {

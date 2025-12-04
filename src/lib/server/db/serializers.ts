@@ -18,8 +18,7 @@ export function serializeTimeEvent(event: TimeEvent, user?: User | null): any {
 		created_at: event.createdAt.toISOString(),
 		// Prefer snapshot data from event, fallback to current user data
 		avatar_name: event.avatarName || user?.name,
-		avatar_email: event.avatarEmail || user?.email,
-		avatar_id: event.avatarId || event.userId,
+		avatarId: event.avatarId || event.userId,
 		domain_id: event.domainId || user?.domainId,
 		domain_name: event.domainName || user?.domainName
 	};
@@ -32,7 +31,7 @@ export function serializeTimeEvent(event: TimeEvent, user?: User | null): any {
 export function serializeUser(user: User): any {
 	return {
 		id: user.id,
-		email: user.email,
+		avatarId: user.avatarId,
 		name: user.name,
 		role: user.role,
 		domain_id: user.domainId,

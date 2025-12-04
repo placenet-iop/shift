@@ -37,6 +37,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 		const events = await prisma.timeEvent.findMany({
 			where: {
 				userId: parsedUserId,
+				domainId: user.domainId,
 				ts: {
 					gte: from ? new Date(from) : undefined,
 					lte: to ? new Date(to) : undefined

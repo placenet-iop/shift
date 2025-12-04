@@ -25,15 +25,15 @@ function normalizeRole(role) {
 }
 
 async function upsertUser(entry) {
-	const email = entry.avatar_email;
+	const avatar_id = entry.avatar_id || entry.avatar_email;
 	const name = entry.avatar_name || entry.avatar_id;
-	if (!email || !name) {
-		console.warn(`Skipping entry without email or name: ${JSON.stringify(entry)}`);
+	if (!avatar_id || !name) {
+		console.warn(`Skipping entry without avatar_id or name: ${JSON.stringify(entry)}`);
 		return;
 	}
 
 	await prisma.user.upsert({
-		where: { email },
+		where: { avatar_id },
 		update: {
 			name,
 			role: normalizeRole(entry.role),
@@ -42,14 +42,14 @@ async function upsertUser(entry) {
 			active: true
 		},
 		create: {
-			email,
+			avatar_id,
 			name,
 			role: normalizeRole(entry.role),
 			domainId: entry.domain_id || null,
 			domainName: entry.domain_name || null
 		}
 	});
-	console.log(`✓ Synced ${email}`);
+	console.log(`✓ Synced ${avatar_id}`);
 }
 
 async function main() {

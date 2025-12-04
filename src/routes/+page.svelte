@@ -284,10 +284,9 @@
 			if (payload) {
 				isAdmin = payload.role === 'admin' || payload.domain_tags?.includes('admin') || payload.domain_tags?.includes('shift_admin');
 				user = {
-					name: payload.name || payload.avatar_name || 'User',
-					email: payload.email || payload.avatar_email || '',
-					avatar_id: payload.avatar_id,
-					domain_id: payload.domain_id,
+					name: payload.name || 'User',
+					avatarId: payload.avatarId || '',
+					domainId: payload.domainId,
 					domain_name: payload.domain_name
 				};
 

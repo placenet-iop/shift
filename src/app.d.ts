@@ -6,14 +6,10 @@ declare global {
 		interface Locals {
 			user?: import('./lib/server/db').User;
 			token?: string;
-			tenant_id?: string;
-			domain_id?: string;
-			domain_name?: string;
-			domain_tags?: string[];
-			avatar_id?: string;
-			avatar_name?: string;
-			avatar_image?: string | null;
-			avatar_tags?: string | null;
+			tenantId?: string;
+			domainId?: string;
+			domainName?: string;
+			avatarId?: string;
 		}
 		// interface PageData {}
 		// interface PageState {}

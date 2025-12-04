@@ -311,7 +311,7 @@
 			// Create CSV
 			const headers = [
 				'Usuario',
-				'Email',
+				'Avatar ID',
 				'Dominio',
 				'ID Dominio',
 				'Fecha',
@@ -325,7 +325,7 @@
 
 			const rows = userDailyBreakdown.map(record => [
 				record.userName,
-				record.userEmail,
+				record.userAvatarId,
 				record.domainName || '',
 				record.domainId || '',
 				record.date,
@@ -362,7 +362,7 @@
 				records: userDailyBreakdown.map(record => ({
 					user_id: record.userId,
 					user_name: record.userName,
-					user_email: record.userEmail,
+					userAvatarId: record.userAvatarId,
 					domain_name: record.domainName,
 					domain_id: record.domainId,
 					date: record.date,
@@ -593,7 +593,7 @@
 	let filteredUsers = $derived(() => {
 		let filtered = users.filter((user) =>
 			user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			user.email.toLowerCase().includes(searchQuery.toLowerCase())
+			user.avatarId.toLowerCase().includes(searchQuery.toLowerCase())
 		);
 
 		filtered.sort((a, b) => {
@@ -809,7 +809,7 @@
 		// Header with user info
 		csvLines.push('# Informe de Registro de Horas');
 		csvLines.push(`# Usuario: ${modalUser.name}`);
-		csvLines.push(`# Email: ${modalUser.email}`);
+		csvLines.push(`# Avatar ID: ${modalUser.avatarId}`);
 		csvLines.push(`# ID: ${modalUser.id}`);
 		csvLines.push(`# Domain: ${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})`);
 		csvLines.push(`# Fecha de generación: ${new Date().toLocaleString('es-ES')}`);
@@ -884,7 +884,7 @@
 			['INFORME DE REGISTRO DE HORAS'],
 			[''],
 			['Usuario:', modalUser.name],
-			['Email:', modalUser.email],
+			['Avatar ID:', modalUser.avatarId],
 			['ID:', modalUser.id],
 			['Domain:', `${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})`],
 			['Fecha de generación:', new Date().toLocaleString('es-ES')],
@@ -1026,7 +1026,7 @@
 		const exportData = {
 			metadata: {
 				usuario: modalUser.name,
-				email: modalUser.email,
+				avatarId: modalUser.avatarId,
 				id: modalUser.id,
 				domain_name: modalUser.domain_name || null,
 				domain_id: modalUser.domain_id || null,
@@ -1141,7 +1141,7 @@
 					return {
 						id: user.id,
 						nombre: user.name,
-						email: user.email,
+						avatarId: user.avatarId,
 						domain_name: user.domain_name,
 						domain_id: user.domain_id,
 						estado: userStatus,
@@ -1207,7 +1207,7 @@
 
 	<div class="info-box">
 		<div class="info-row"><span class="info-label">Usuario:</span><span class="info-value">${modalUser.name}</span></div>
-		<div class="info-row"><span class="info-label">Email:</span><span class="info-value">${modalUser.email}</span></div>
+										<div class="info-row"><span class="info-label">Avatar ID:</span><span class="info-value">${modalUser.avatarId}</span></div>
 		<div class="info-row"><span class="info-label">ID:</span><span class="info-value">${modalUser.id}</span></div>
 		<div class="info-row"><span class="info-label">Domain:</span><span class="info-value">${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})</span></div>
 		<div class="info-row"><span class="info-label">Fecha de generación:</span><span class="info-value">${new Date().toLocaleString('es-ES')}</span></div>
@@ -1309,7 +1309,7 @@
 	interface UserDayRecord {
 		userId: number;
 		userName: string;
-		userEmail: string;
+		userAvatarId: string;
 		domainName: string | null;
 		domainId: string | null;
 		date: string;
@@ -1402,7 +1402,7 @@
 				records.push({
 					userId: user.id,
 					userName: user.name,
-					userEmail: user.email,
+					userAvatarId: user.avatarId,
 					domainName: user.domain_name,
 					domainId: user.domain_id,
 					date: dateKey,
@@ -1721,7 +1721,7 @@
 					<thead>
 						<tr>
 							<th>Usuario</th>
-							<th>Email</th>
+							<th>Avatar ID</th>
 							<th>Dominio</th>
 							<th>Fecha</th>
 							<th>Primera Entrada</th>
@@ -1743,7 +1743,7 @@
 										<div class="user-name">{record.userName}</div>
 									</div>
 								</td>
-								<td class="email-cell">{record.userEmail}</td>
+								<td class="email-cell">{record.userAvatarId}</td>
 								<td class="domain-cell">
 									{#if record.domainName}
 										<span class="domain-badge">{record.domainName}</span>
@@ -1848,7 +1848,7 @@
 									<div>
 										<strong>{event.avatar_name || user?.name || 'Usuario desconocido'}</strong>
 										<div class="timeline-user-meta">
-											<span>(ID: {event.avatar_id || user?.id})</span>
+											<span>(ID: {event.avatarId || user?.id})</span>
 											{#if event.domain_id || user?.domain_id}
 												<span>• {event.domain_id || user?.domain_id}</span>
 											{/if}
@@ -1900,8 +1900,8 @@
 										<div class="info-value">{modalUser.name}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Email</div>
-										<div class="info-value">{modalUser.email}</div>
+										<div class="info-label">Avatar ID</div>
+										<div class="info-value">{modalUser.avatarId}</div>
 									</div>
 									<div class="info-card">
 										<div class="info-label">ID</div>
@@ -1939,10 +1939,10 @@
 													<span class="jwt-value">{decodedToken.userId}</span>
 												</div>
 											{/if}
-											{#if decodedToken.email}
+											{#if decodedToken.avatarId}
 												<div class="jwt-field">
-													<span class="jwt-label">Email:</span>
-													<span class="jwt-value">{decodedToken.email}</span>
+													<span class="jwt-label">Avatar ID:</span>
+													<span class="jwt-value">{decodedToken.avatarId}</span>
 												</div>
 											{/if}
 											{#if decodedToken.role}

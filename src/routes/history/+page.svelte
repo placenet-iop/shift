@@ -218,7 +218,7 @@
 						<select id="worker" bind:value={selectedUserId} onchange={() => loadEvents()}>
 							<option value="">{t('admin.filters.allUsers')}</option>
 							{#each users as user}
-								<option value={user.id}>{user.name} ({user.email})</option>
+								<option value={user.id}>{user.name} ({user.avatarId})</option>
 							{/each}
 						</select>
 					</div>

@@ -15,6 +15,9 @@ export const GET: RequestHandler = async ({ locals }) => {
 		// Get all users
 		const prisma = getDb();
 		const users = await prisma.user.findMany({
+			where: {
+				domainId: user.domainId
+			},
 			orderBy: {
 				createdAt: 'desc'
 			}

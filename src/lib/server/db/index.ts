@@ -26,24 +26,26 @@ export const queries = {
 		return prisma.user.findUnique({ where: { id } });
 	},
 
-	getUserByEmail: async (email: string): Promise<User | null> => {
-		return prisma.user.findUnique({ where: { email } });
+	getUserByAvatarId: async (avatarId: string): Promise<User | null> => {
+		return prisma.user.findUnique({ where: { avatarId } });
 	},
 
 	createUser: async (
-		email: string,
+		avatarId: string,
 		name: string,
 		role: 'worker' | 'admin' = 'worker',
-		domainId?: string,
-		domainName?: string
+		domainId: string,
+		domainName?: string,
+		tenantId?: string
 	): Promise<number> => {
 		const user = await prisma.user.create({
 			data: {
-				email,
+				avatarId,
 				name,
 				role,
-				domainId: domainId || null,
-				domainName: domainName || null
+				domainId: domainId,
+				domainName: domainName || null,
+				tenantId: tenantId || null
 			}
 		});
 		return user.id;
@@ -62,10 +64,10 @@ export const queries = {
 			data.role = updates.role;
 		}
 		if (updates.domain_id !== undefined) {
-			data.domainId = updates.domain_id || null;
+			data.domainId = updates.domain_id ?? undefined;
 		}
 		if (updates.domain_name !== undefined) {
-			data.domainName = updates.domain_name || null;
+			data.domainName = updates.domain_name ?? undefined;
 		}
 
 		if (Object.keys(data).length > 0) {

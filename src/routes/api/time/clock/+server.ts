@@ -95,7 +95,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			userAgent,
 			undefined, // meta
 			user.name, // avatarName
-			user.email, // avatarEmail
+			user.avatarId, // avatarEmail
 			user.id, // avatarId
 			user.domainId || undefined, // domainId
 			user.domainName || undefined // domainName

@@ -27,10 +27,11 @@ enum TimeEventSource {
 
 model User {
   id                 Int         @id @default(autoincrement())
-  email              String      @unique
+  avatarId          String       @unique @map("avatar_id")
   name               String
   role               Role        @default(worker)
-  domainId           String?     @map("domain_id")
+  domainId           String      @map("domain_id")
+  tenantId           String?     @map("tenant_id")
   domainName         String?     @map("domain_name")
   active             Boolean     @default(true)
   createdAt          DateTime    @default(now()) @map("created_at")

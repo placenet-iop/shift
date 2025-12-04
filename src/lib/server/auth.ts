@@ -5,25 +5,13 @@ import type { User } from './db';
 import { getJWTSecret, getPlacenetConfig, isPlacenetEnabled } from './config';
 
 export interface JWTPayload {
-	// Standard shift format
 	userId?: number;
-	email?: string;
+	avatarId?: string;
 	name?: string;
 	role?: 'worker' | 'admin';
-
-	// Placenet format
-	avatar_id?: string;
-	avatar_name?: string;
-	avatar_email?: string;
-	avatar_image?: string;
-	avatar_tags?: string;
-	domain_id?: string;
-	domain_name?: string;
-	domain_tags?: string[];
-	tags?: string[];
-	tenant_id?: string;
-
-	// JWT standard fields
+	domainId?: string;
+	domainName?: string;
+	tenantId?: string;
 	iat?: number;
 	exp?: number;
 	kid?: string;
@@ -42,39 +30,32 @@ function getJWKS() {
 /**
  * Normalize Placenet JWT payload to Shift format
  */
-function normalizePlacenetPayload(payload: JWTPayload): JWTPayload {
+function normalizePlacenetPayload(payload: any): JWTPayload {
 	if (!isPlacenetEnabled()) {
-		return payload;
+		return payload as JWTPayload;
 	}
-
-	const placenetConfig = getPlacenetConfig();
-	const mapping = placenetConfig.jwt_mapping;
 
 	// If already in shift format, return as is
-	if (payload.userId || payload.email || payload.name) {
-		return payload;
+	if (payload.userId || payload.avatarId || payload.name) {
+		return payload as JWTPayload;
 	}
 
-	// Map Placenet fields to Shift fields
+	// Map Placenet fields (may come as snake_case) to Shift format (camelCase)
+	const avatarId = payload.avatar_id || payload.avatarId;
 	const normalized: JWTPayload = {
-		userId: payload.avatar_id ? parseInt(payload.avatar_id.replace(/\D/g, '')) || 0 : 0,
-		email: payload.avatar_email || `${payload.avatar_id}@placenet.local`,
-		name: payload.avatar_name || 'Usuario',
-		role: 'worker', // Default role
-
-		// Keep original Placenet fields
-		avatar_id: payload.avatar_id,
-		avatar_name: payload.avatar_name,
-		avatar_email: payload.avatar_email,
-		domain_id: payload.domain_id,
-		domain_name: payload.domain_name,
-		domain_tags: payload.domain_tags || payload.tags,
-
+		userId: avatarId ? parseInt(avatarId.replace(/\D/g, '')) || 0 : 0,
+		avatarId: avatarId,
+		name: payload.avatar_name || payload.name || 'Usuario',
+		role: payload.role || 'worker',
+		domainId: payload.domain_id || payload.domainId,
+		domainName: payload.domain_name || payload.domainName,
+		tenantId: payload.tenant_id || payload.tenantId,
 		iat: payload.iat,
 		exp: payload.exp
 	};
 
 	// Determine role based on tags
+	const placenetConfig = getPlacenetConfig();
 	const adminTags = placenetConfig.admin_tags || [];
 	const userTags = payload.domain_tags || payload.tags || [];
 
@@ -145,7 +126,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 export function generateToken(user: User): string {
 	const payload: JWTPayload = {
 		userId: user.id,
-		email: user.email,
+		avatarId: user.avatarId,
 		name: user.name,
 		role: user.role
 	};
@@ -171,34 +152,37 @@ export async function getUserFromToken(token: string): Promise<User | null> {
 
 	const payload = await verifyToken(token);
 
-	if (!payload || !payload.email) {
-		console.log('[Auth] No payload or email in token');
+	if (!payload || !payload.avatarId) {
+		console.log('[Auth] No payload or avatarId in token');
 		return null;
 	}
 
-	// Try to get user by email first (for Placenet integration)
+	// Try to get user by avatarId
 	let user: User | null = null;
 	try {
-		user = await queries.getUserByEmail(payload.email);
+		user = await queries.getUserByAvatarId(payload.avatarId);
 	} catch (error) {
-		console.error('[Auth] Error getting user by email:', error);
+		console.error('[Auth] Error getting user by avatarId:', error);
 		return null;
 	}
 
-	// If user doesn't exist and we have valid payload, create it (auto-provision from Placenet)
-	if (!user && payload.name && payload.email) {
+	// If user doesn't exist and we have valid payload, create it
+	if (!user && payload.name && payload.avatarId) {
+		console.log(payload);
+		console.log(payload.tenantId);
 		try {
-			console.log(`[Auth] Auto-creating user: ${payload.email} (${payload.name})`);
+			console.log(`[Auth] Auto-creating user: ${payload.avatarId} (${payload.name}) ${payload.tenantId}`);
 			const userId = await queries.createUser(
-				payload.email,
+				payload.avatarId,
 				payload.name,
 				payload.role || 'worker',
-				payload.domain_id,
-				payload.domain_name
+				payload.domainId || '',
+				payload.domainName,
+				payload.tenantId
 			);
 			user = await queries.getUserById(userId);
 			if (user) {
-				console.log(`[Auth] Successfully created user: ${user.email} (ID: ${user.id})`);
+				console.log(`[Auth] Successfully created user: ${user.avatarId} (ID: ${user.id})`);
 			} else {
 				console.error(`[Auth] Failed to retrieve created user with ID: ${userId}`);
 			}
@@ -208,19 +192,17 @@ export async function getUserFromToken(token: string): Promise<User | null> {
 		}
 	} else if (user) {
 		// Update user role and domain info if token has different information
-		// This ensures users get the correct role when logging in with admin tokens
 		const updates: { role?: 'worker' | 'admin'; domain_id?: string; domain_name?: string; name?: string } = {};
 		
-		// Always update role if payload has a role (even if it's the same, to ensure it's correct)
 		if (payload.role && payload.role !== user.role) {
 			updates.role = payload.role;
-			console.log(`[Auth] Updating user ${user.email} role from ${user.role} to ${payload.role}`);
+			console.log(`[Auth] Updating user ${user.avatarId} role from ${user.role} to ${payload.role}`);
 		}
-		if (payload.domain_id !== user.domainId) {
-			updates.domain_id = payload.domain_id;
+		if (payload.domainId !== user.domainId) {
+			updates.domain_id = payload.domainId;
 		}
-		if (payload.domain_name !== user.domainName) {
-			updates.domain_name = payload.domain_name;
+		if (payload.domainName !== user.domainName) {
+			updates.domain_name = payload.domainName;
 		}
 		if (payload.name && payload.name !== user.name) {
 			updates.name = payload.name;
@@ -228,10 +210,9 @@ export async function getUserFromToken(token: string): Promise<User | null> {
 
 		if (Object.keys(updates).length > 0) {
 			await queries.updateUser(user.id, updates);
-			// Reload user to get updated data
 			user = await queries.getUserById(user.id);
 			if (user && updates.role) {
-				console.log(`[Auth] User ${user.email} role updated to ${user.role}`);
+				console.log(`[Auth] User ${user.avatarId} role updated to ${user.role}`);
 			}
 		}
 	}

@@ -40,6 +40,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 		const events = await prisma.timeEvent.findMany({
 			where: {
 				userId: parsedUserId,
+				domainId: user.domainId,
 				ts: {
 					gte: from ? new Date(from) : undefined,
 					lte: to ? new Date(to) : undefined
@@ -56,7 +57,7 @@ export const GET: RequestHandler = async ({ request, url, locals }) => {
 		const serialized = events.map((event) => serializeTimeEvent(event, event.user || undefined));
 		const exportRows = serialized.map((record) => ({
 			worker_name: record.user_name,
-			worker_email: record.user_email,
+			worker_avatarId: record.avatarId,
 			event_type: record.event_type,
 			ts: record.ts,
 			source: record.source,
@@ -106,7 +107,7 @@ function generateCSV(data: any[]): string {
 	// CSV Headers
 	const headers = [
 		'Trabajador',
-		'Email',
+		'Avatar ID',
 		'Tipo de Evento',
 		'Fecha y Hora',
 		'Origen',
@@ -118,7 +119,7 @@ function generateCSV(data: any[]): string {
 	// CSV Rows
 	const rows = data.map((record) => [
 		escapeCSV(record.worker_name),
-		escapeCSV(record.worker_email),
+		escapeCSV(record.worker_avatarId),
 		escapeCSV(translateEventType(record.event_type)),
 		escapeCSV(record.ts),
 		escapeCSV(record.source),
