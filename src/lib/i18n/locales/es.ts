@@ -109,7 +109,8 @@ export default {
 		tabs: {
 			timeRecords: 'Registros de Tiempo',
 			users: 'Usuarios',
-			timeline: 'Línea de Tiempo'
+			timeline: 'Línea de Tiempo',
+			timelineChrono: 'Timeline Cronológico'
 		},
 		viewModes: {
 			summary: 'Resumen',
@@ -166,7 +167,23 @@ export default {
 			noData: 'Sin datos',
 			close: 'Cerrar',
 			viewTimeline: 'Vista Timeline',
-			viewDaily: 'Vista por Días'
+			viewDaily: 'Vista por Días',
+			reportTitle: 'Informe de Registro de Horas',
+			generalReportTitle: 'Informe General de Registro de Horas',
+			generationDate: 'Fecha de generación',
+			period: 'Período',
+			start: 'Inicio',
+			present: 'Presente',
+			end: 'Fin',
+			hours: 'Horas',
+			breaks: 'Pausas',
+			userId: 'ID Usuario',
+			domainId: 'ID Dominio',
+			state: 'Estado',
+			entryTime: 'Hora Entrada',
+			exitTime: 'Hora Salida',
+			noDataToExport: 'No hay datos para exportar',
+			noDataForDateRange: 'No hay datos para el rango de fechas seleccionado'
 		},
 		events: {
 			loadingRecords: 'Cargando registros...',
@@ -218,7 +235,13 @@ export default {
 			status: {
 				active: 'Activo',
 				inactive: 'Inactivo',
-				noStatus: 'Sin Estado'
+				noStatus: 'Sin Estado',
+				inProgress: 'En Curso',
+				onBreak: 'En Descanso',
+				finished: 'Finalizado',
+				working: 'Trabajando',
+				resting: 'Descansando',
+				notWorking: 'No trabajando'
 			},
 			stats: {
 				total: 'Total:',
@@ -247,7 +270,9 @@ export default {
 		domain: 'Dominio:',
 		weeklySummary: 'Resumen semanal de horas',
 		timeWorked: 'Tiempo trabajado',
-		breakTime: 'Tiempo de descanso'
+		breakTime: 'Tiempo de descanso',
+		months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+		days: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 	},
 	events: {
 		clockIn: 'Fichar Entrada',

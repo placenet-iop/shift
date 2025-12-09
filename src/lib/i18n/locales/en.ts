@@ -109,7 +109,8 @@ export default {
 		tabs: {
 			timeRecords: 'Time Records',
 			users: 'Users',
-			timeline: 'Timeline'
+			timeline: 'Timeline',
+			timelineChrono: 'Chronological Timeline'
 		},
 		viewModes: {
 			summary: 'Summary',
@@ -166,7 +167,23 @@ export default {
 			noData: 'No data',
 			close: 'Close',
 			viewTimeline: 'Timeline View',
-			viewDaily: 'Daily View'
+			viewDaily: 'Daily View',
+			reportTitle: 'Time Tracking Report',
+			generalReportTitle: 'General Time Tracking Report',
+			generationDate: 'Generation date',
+			period: 'Period',
+			start: 'Start',
+			present: 'Present',
+			end: 'End',
+			hours: 'Hours',
+			breaks: 'Breaks',
+			userId: 'User ID',
+			domainId: 'Domain ID',
+			state: 'State',
+			entryTime: 'Entry time',
+			exitTime: 'Exit time',
+			noDataToExport: 'No data to export',
+			noDataForDateRange: 'No data for the selected date range'
 		},
 		events: {
 			loadingRecords: 'Loading records...',
@@ -218,7 +235,13 @@ export default {
 			status: {
 				active: 'Active',
 				inactive: 'Inactive',
-				noStatus: 'No Status'
+				noStatus: 'No Status',
+				inProgress: 'In Progress',
+				onBreak: 'On Break',
+				finished: 'Finished',
+				working: 'Working',
+				resting: 'Resting',
+				notWorking: 'Not working'
 			},
 			stats: {
 				total: 'Total:',
@@ -247,7 +270,9 @@ export default {
 		domain: 'Domain:',
 		weeklySummary: 'Weekly hours overview',
 		timeWorked: 'Time worked',
-		breakTime: 'Break time'
+		breakTime: 'Break time',
+		months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+		days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 	},
 	events: {
 		clockIn: 'Clock In',

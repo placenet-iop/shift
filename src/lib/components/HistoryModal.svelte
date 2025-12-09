@@ -149,22 +149,8 @@
 		loadEvents();
 	}
 
-	const monthNames = [
-		'Enero',
-		'Febrero',
-		'Marzo',
-		'Abril',
-		'Mayo',
-		'Junio',
-		'Julio',
-		'Agosto',
-		'Septiembre',
-		'Octubre',
-		'Noviembre',
-		'Diciembre'
-	];
-
-	const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+	const monthNames = $derived(t('history.months'));
+	const dayNames = $derived(t('history.days'));
 
 	$effect(() => {
 		if (show && browser) {

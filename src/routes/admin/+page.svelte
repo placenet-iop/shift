@@ -301,7 +301,7 @@
 
 	function exportDailyBreakdown(format: 'csv' | 'json') {
 		if (userDailyBreakdown.length === 0) {
-			error = 'No hay datos para exportar';
+			error = t('admin.report.noDataToExport');
 			return;
 		}
 
@@ -470,11 +470,11 @@
 
 	function getStatusLabel(status: string): string {
 		const labels: Record<string, string> = {
-			clocked_in: 'En Curso',
-			on_pause: 'En Descanso',
-			clocked_out: 'Finalizado'
+			clocked_in: t('admin.users.status.inProgress'),
+			on_pause: t('admin.users.status.onBreak'),
+			clocked_out: t('admin.users.status.finished')
 		};
-		return labels[status] || 'Sin Estado';
+		return labels[status] || t('admin.users.status.noStatus');
 	}
 
 	function getStatusColor(status: string): string {
@@ -807,16 +807,16 @@
 		const csvLines = [];
 
 		// Header with user info
-		csvLines.push('# Informe de Registro de Horas');
-		csvLines.push(`# Usuario: ${modalUser.name}`);
-		csvLines.push(`# Avatar ID: ${modalUser.avatarId}`);
+		csvLines.push(`# ${t('admin.report.reportTitle')}`);
+		csvLines.push(`# ${t('admin.users.tableHeaders.user')}: ${modalUser.name}`);
+		csvLines.push(`# ${t('admin.users.tableHeaders.avatarId')}: ${modalUser.avatarId}`);
 		csvLines.push(`# ID: ${modalUser.id}`);
-		csvLines.push(`# Domain: ${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})`);
-		csvLines.push(`# Fecha de generación: ${new Date().toLocaleString('es-ES')}`);
+		csvLines.push(`# ${t('admin.users.tableHeaders.domain')}: ${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})`);
+		csvLines.push(`# ${t('admin.report.generationDate')}: ${new Date().toLocaleString(localeCode)}`);
 
 		if (modalFromDate || modalToDate) {
 			csvLines.push(
-				`# Período: ${modalFromDate || 'Inicio'} a ${modalToDate || 'Presente'}`
+				`# ${t('admin.report.period')}: ${modalFromDate || t('admin.report.start')} a ${modalToDate || t('admin.report.present')}`
 			);
 		}
 		csvLines.push('');
@@ -830,8 +830,8 @@
 		csvLines.push('');
 
 		// Daily breakdown
-		csvLines.push('# DESGLOSE POR DÍAS');
-		csvLines.push('Fecha,Día,Primera entrada,Última salida,Horas trabajadas,Tiempo descanso,Total,Núm. registros');
+		csvLines.push(`# ${t('admin.summary.dailyBreakdown').toUpperCase()}`);
+		csvLines.push(`${t('admin.users.tableHeaders.date')},${t('admin.users.tableHeaders.day')},${t('admin.users.tableHeaders.firstEntry')},${t('admin.users.tableHeaders.lastExit')},${t('admin.users.tableHeaders.hoursWorked')},${t('admin.users.tableHeaders.breakTime')},${t('admin.users.tableHeaders.total')},${t('admin.summary.numRecords')}`);
 
 		dailySummaries.forEach((day) => {
 			const dayName = day.dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
@@ -881,14 +881,14 @@
 
 		// Sheet 1: Summary
 		const summaryData = [
-			['INFORME DE REGISTRO DE HORAS'],
+			[t('admin.report.reportTitle').toUpperCase()],
 			[''],
-			['Usuario:', modalUser.name],
-			['Avatar ID:', modalUser.avatarId],
+			[`${t('admin.users.tableHeaders.user')}:`, modalUser.name],
+			[`${t('admin.users.tableHeaders.avatarId')}:`, modalUser.avatarId],
 			['ID:', modalUser.id],
-			['Domain:', `${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})`],
-			['Fecha de generación:', new Date().toLocaleString('es-ES')],
-			['Período:', `${modalFromDate || 'Inicio'} a ${modalToDate || 'Presente'}`],
+			[`${t('admin.users.tableHeaders.domain')}:`, `${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})`],
+			[`${t('admin.report.generationDate')}:`, new Date().toLocaleString(localeCode)],
+			[`${t('admin.report.period')}:`, `${modalFromDate || t('admin.report.start')} a ${modalToDate || t('admin.report.present')}`],
 			[''],
 			[t('admin.summary.generalSummary')],
 			[t('admin.summary.daysWorked'), t('admin.summary.totalHours'), t('admin.summary.breakTime'), t('admin.summary.totalTime')],
@@ -1081,15 +1081,15 @@
 			const csvLines = [];
 
 			// Header
-			csvLines.push('# Informe General de Registro de Horas');
-			csvLines.push(`# Fecha de generación: ${new Date().toLocaleString('es-ES')}`);
+			csvLines.push(`# ${t('admin.report.generalReportTitle')}`);
+			csvLines.push(`# ${t('admin.report.generationDate')}: ${new Date().toLocaleString(localeCode)}`);
 			if (fromDate || toDate) {
-				csvLines.push(`# Período: ${fromDate || 'Inicio'} a ${toDate || 'Presente'}`);
+				csvLines.push(`# ${t('admin.report.period')}: ${fromDate || t('admin.report.start')} a ${toDate || t('admin.report.present')}`);
 			}
 			csvLines.push('');
 
 			// Column headers
-			csvLines.push('Usuario,Domain,ID Usuario,Domain ID,Estado,Fecha,Hora Entrada,Hora Salida,Horas Trabajadas,Pausas,Total');
+			csvLines.push(`${t('admin.users.tableHeaders.user')},${t('admin.users.tableHeaders.domain')},${t('admin.report.userId')},${t('admin.report.domainId')},${t('admin.report.state')},${t('admin.users.tableHeaders.date')},${t('admin.report.entryTime')},${t('admin.report.exitTime')},${t('admin.users.tableHeaders.hoursWorked')},${t('admin.report.breaks')},${t('admin.users.tableHeaders.total')}`);
 
 			// Data for each user
 			filteredUsers().forEach((user) => {
@@ -1180,7 +1180,7 @@
 <html>
 <head>
 	<meta charset="UTF-8">
-	<title>Informe de Registro de Horas - ${modalUser.name}</title>
+	<title>${t('admin.report.reportTitle')} - ${modalUser.name}</title>
 	<style>
 		body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
 		h1 { color: #635fe5; border-bottom: 3px solid #635fe5; padding-bottom: 10px; }
@@ -1203,15 +1203,15 @@
 	</style>
 </head>
 <body>
-	<h1>Informe de Registro de Horas</h1>
+	<h1>${t('admin.report.reportTitle')}</h1>
 
 	<div class="info-box">
-		<div class="info-row"><span class="info-label">Usuario:</span><span class="info-value">${modalUser.name}</span></div>
-										<div class="info-row"><span class="info-label">Avatar ID:</span><span class="info-value">${modalUser.avatarId}</span></div>
+		<div class="info-row"><span class="info-label">${t('admin.users.tableHeaders.user')}:</span><span class="info-value">${modalUser.name}</span></div>
+										<div class="info-row"><span class="info-label">${t('admin.users.tableHeaders.avatarId')}:</span><span class="info-value">${modalUser.avatarId}</span></div>
 		<div class="info-row"><span class="info-label">ID:</span><span class="info-value">${modalUser.id}</span></div>
-		<div class="info-row"><span class="info-label">Domain:</span><span class="info-value">${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})</span></div>
-		<div class="info-row"><span class="info-label">Fecha de generación:</span><span class="info-value">${new Date().toLocaleString('es-ES')}</span></div>
-		<div class="info-row"><span class="info-label">Período:</span><span class="info-value">${modalFromDate || 'Inicio'} a ${modalToDate || 'Presente'}</span></div>
+		<div class="info-row"><span class="info-label">${t('admin.users.tableHeaders.domain')}:</span><span class="info-value">${modalUser.domain_name || 'N/A'} (${modalUser.domain_id || 'N/A'})</span></div>
+		<div class="info-row"><span class="info-label">${t('admin.report.generationDate')}:</span><span class="info-value">${new Date().toLocaleString(localeCode)}</span></div>
+		<div class="info-row"><span class="info-label">${t('admin.report.period')}:</span><span class="info-value">${modalFromDate || t('admin.report.start')} a ${modalToDate || t('admin.report.present')}</span></div>
 	</div>
 
 	<h2>${t('admin.summary.generalSummaryHeading')}</h2>
@@ -1234,14 +1234,14 @@
 	<table>
 		<thead>
 			<tr>
-				<th>Fecha</th>
-				<th>Día</th>
-				<th>Primera entrada</th>
-				<th>Última salida</th>
-				<th>Horas trabajadas</th>
-				<th>Tiempo descanso</th>
-				<th>Total</th>
-				<th>Registros</th>
+				<th>${t('admin.users.tableHeaders.date')}</th>
+				<th>${t('admin.users.tableHeaders.day')}</th>
+				<th>${t('admin.users.tableHeaders.firstEntry')}</th>
+				<th>${t('admin.users.tableHeaders.lastExit')}</th>
+				<th>${t('admin.users.tableHeaders.hoursWorked')}</th>
+				<th>${t('admin.users.tableHeaders.breakTime')}</th>
+				<th>${t('admin.users.tableHeaders.total')}</th>
+				<th>${t('admin.users.tableHeaders.records')}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -1524,7 +1524,7 @@
 						stroke-linejoin="round"
 					/>
 				</svg>
-				Timeline Cronológico
+				{t('admin.tabs.timelineChrono')}
 			</button>
 		</div>
 
@@ -1632,10 +1632,10 @@
 							</th>
 							<th>{t('admin.users.tableHeaders.date')}</th>
 							<th>{t('admin.users.tableHeaders.start')}</th>
-							<th>Fin</th>
-							<th>Horas</th>
-							<th>Pausas</th>
-							<th>Total</th>
+							<th>{t('admin.report.end')}</th>
+							<th>{t('admin.report.hours')}</th>
+							<th>{t('admin.report.breaks')}</th>
+							<th>{t('admin.users.tableHeaders.total')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -1775,13 +1775,13 @@
 				</table>
 				{#if userDailyBreakdown.length === 0}
 					<div class="empty-state">
-						<p>No hay datos para el rango de fechas seleccionado</p>
+						<p>{t('admin.report.noDataForDateRange')}</p>
 					</div>
 				{/if}
 			</div>
 			{/if}
 		{:else if currentTab === 'timeline'}
-			<!-- Timeline Cronológico -->
+			<!-- Chronological Timeline -->
 			<div class="timeline-section">
 				<div class="timeline-header">
 					<h3>
@@ -1882,7 +1882,7 @@
 							<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
 								<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
-							Historial Completo: {modalUser?.name || 'Usuario'}
+							{t('admin.users.fullHistory')}: {modalUser?.name || t('admin.users.tableHeaders.user')}
 						</h3>
 						<button class="btn-close" onclick={closeUserModal}>
 							<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -1935,19 +1935,19 @@
 										<div class="jwt-grid">
 											{#if decodedToken.userId}
 												<div class="jwt-field">
-													<span class="jwt-label">User ID:</span>
+													<span class="jwt-label">{t('admin.report.userId')}:</span>
 													<span class="jwt-value">{decodedToken.userId}</span>
 												</div>
 											{/if}
 											{#if decodedToken.avatarId}
 												<div class="jwt-field">
-													<span class="jwt-label">Avatar ID:</span>
+													<span class="jwt-label">{t('admin.users.tableHeaders.avatarId')}:</span>
 													<span class="jwt-value">{decodedToken.avatarId}</span>
 												</div>
 											{/if}
 											{#if decodedToken.role}
 												<div class="jwt-field">
-													<span class="jwt-label">Rol:</span>
+													<span class="jwt-label">{t('admin.users.roles.role')}:</span>
 													<span class="jwt-value">{decodedToken.role}</span>
 												</div>
 											{/if}
@@ -2051,14 +2051,14 @@
 								<table class="daily-table">
 									<thead>
 										<tr>
-											<th>Fecha</th>
-											<th>Día</th>
-											<th>Primera entrada</th>
-											<th>Última salida</th>
-											<th>Horas trabajadas</th>
-											<th>Tiempo descanso</th>
-											<th>Total</th>
-											<th>Registros</th>
+											<th>{t('admin.users.tableHeaders.date')}</th>
+											<th>{t('admin.users.tableHeaders.day')}</th>
+											<th>{t('admin.users.tableHeaders.firstEntry')}</th>
+											<th>{t('admin.users.tableHeaders.lastExit')}</th>
+											<th>{t('admin.users.tableHeaders.hoursWorked')}</th>
+											<th>{t('admin.users.tableHeaders.breakTime')}</th>
+											<th>{t('admin.users.tableHeaders.total')}</th>
+											<th>{t('admin.users.tableHeaders.records')}</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -2129,7 +2129,7 @@
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
-								Exportar Informe
+								{t('admin.export.exportReport')}
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="chevron">
 									<path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
