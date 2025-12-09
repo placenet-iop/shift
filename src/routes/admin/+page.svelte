@@ -920,7 +920,7 @@
 			]);
 		});
 		dailyData.push([
-			'TOTAL',
+			t('admin.users.modal.total'),
 			'',
 			'',
 			'',
@@ -1264,7 +1264,7 @@
 		</tbody>
 		<tfoot>
 			<tr class="totals-row">
-				<td colspan="4">TOTAL</td>
+				<td colspan="4">{t('admin.users.modal.total')}</td>
 				<td>${modalTotalHours.worked.toFixed(2)} h</td>
 				<td>${modalTotalHours.break.toFixed(2)} h</td>
 				<td>${modalTotalHours.total.toFixed(2)} h</td>
@@ -1274,7 +1274,7 @@
 	</table>
 
 	<div class="footer">
-		Generado por Sistema de Control de Horarios | ${new Date().toLocaleDateString('es-ES')}
+		${t('admin.users.modal.generatedBy')} | ${new Date().toLocaleDateString(localeCode)}
 	</div>
 </body>
 </html>
@@ -1438,7 +1438,7 @@
 						<svg width="20" height="20" viewBox="0 0 20 20" fill="none" class:spinning={loading}>
 							<path d="M17.5 10C17.5 14.1421 14.1421 17.5 10 17.5C5.85786 17.5 2.5 14.1421 2.5 10C2.5 5.85786 5.85786 2.5 10 2.5C12.0825 2.5 13.9635 3.36331 15.3033 4.73744M15.3033 4.73744V1.66667M15.3033 4.73744H12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
-						{loading ? 'Actualizando...' : 'Actualizar'}
+						{loading ? t('admin.refreshing') : t('admin.refresh')}
 					</button>
 
 					<div class="export-menu-container-header">
@@ -1464,7 +1464,7 @@
 									</svg>
 									<div class="option-content">
 										<div class="option-title">CSV</div>
-										<div class="option-desc">Todos los usuarios del período seleccionado</div>
+										<div class="option-desc">{t('admin.export.allUsersInPeriod')}</div>
 									</div>
 								</button>
 
@@ -1476,7 +1476,7 @@
 									</svg>
 									<div class="option-content">
 										<div class="option-title">JSON</div>
-										<div class="option-desc">Datos estructurados para integraciones</div>
+										<div class="option-desc">{t('admin.export.structuredData')}</div>
 									</div>
 								</button>
 							</div>
@@ -1549,7 +1549,7 @@
 								<rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
 								<path d="M5 1v3M11 1v3M2 6h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 							</svg>
-							Desde:
+							{t('admin.filters.from')}
 						</label>
 						<input
 							id="from-date"
@@ -1564,7 +1564,7 @@
 								<rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
 								<path d="M5 1v3M11 1v3M2 6h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 							</svg>
-							Hasta:
+							{t('admin.filters.to')}
 						</label>
 						<input
 							id="to-date"
@@ -1788,7 +1788,7 @@
 						<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
 							<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 						</svg>
-						Registro Cronológico de Actividad
+						{t('admin.tabs.chronologicalActivity')}
 					</h3>
 					<div class="timeline-controls">
 						<div class="date-filters-compact">
@@ -1810,7 +1810,7 @@
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
-							Exportar
+							{t('admin.export.export')}
 						</button>
 					</div>
 				</div>
@@ -1866,7 +1866,7 @@
 
 				{#if timelineEvents.length > 100}
 					<div class="timeline-more">
-						Mostrando los últimos 100 registros de {timelineEvents.length} totales
+						{t('admin.users.modal.showingRecords').replace('{count}', '100').replace('{total}', timelineEvents.length.toString())}
 					</div>
 				{/if}
 			</div>
@@ -1896,42 +1896,42 @@
 							<div class="modal-user-info">
 								<div class="user-info-grid">
 									<div class="info-card">
-										<div class="info-label">Nombre</div>
+										<div class="info-label">{t('admin.users.modal.name')}</div>
 										<div class="info-value">{modalUser.name}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Avatar ID</div>
+										<div class="info-label">{t('admin.users.modal.avatarId')}</div>
 										<div class="info-value">{modalUser.avatarId}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">ID</div>
+										<div class="info-label">{t('admin.users.modal.id')}</div>
 										<div class="info-value">{modalUser.id}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Rol</div>
+										<div class="info-label">{t('admin.users.modal.role')}</div>
 										<div class="info-value">{modalUser.role}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Domain Name</div>
+										<div class="info-label">{t('admin.users.modal.domainName')}</div>
 										<div class="info-value">{modalUser.domain_name || 'N/A'}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Domain ID</div>
+										<div class="info-label">{t('admin.users.modal.domainId')}</div>
 										<div class="info-value">{modalUser.domain_id || 'N/A'}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Estado</div>
-										<div class="info-value">{modalUser.active ? 'Activo' : 'Inactivo'}</div>
+										<div class="info-label">{t('admin.users.modal.state')}</div>
+										<div class="info-value">{modalUser.active ? t('admin.users.modal.active') : t('admin.users.modal.inactive')}</div>
 									</div>
 									<div class="info-card">
-										<div class="info-label">Creado</div>
-										<div class="info-value">{new Date(modalUser.created_at).toLocaleDateString('es-ES')}</div>
+										<div class="info-label">{t('admin.users.modal.created')}</div>
+										<div class="info-value">{new Date(modalUser.created_at).toLocaleDateString(localeCode)}</div>
 									</div>
 								</div>
 
 								{#if decodedToken}
 									<div class="jwt-info">
-										<h4>Información del Token JWT</h4>
+										<h4>{t('admin.users.modal.jwtInfo')}</h4>
 										<div class="jwt-grid">
 											{#if decodedToken.userId}
 												<div class="jwt-field">
@@ -1953,14 +1953,14 @@
 											{/if}
 											{#if decodedToken.iat}
 												<div class="jwt-field">
-													<span class="jwt-label">Emitido:</span>
-													<span class="jwt-value">{new Date(decodedToken.iat * 1000).toLocaleString('es-ES')}</span>
+													<span class="jwt-label">{t('admin.users.modal.issued')}:</span>
+													<span class="jwt-value">{new Date(decodedToken.iat * 1000).toLocaleString(localeCode)}</span>
 												</div>
 											{/if}
 											{#if decodedToken.exp}
 												<div class="jwt-field">
-													<span class="jwt-label">Expira:</span>
-													<span class="jwt-value">{new Date(decodedToken.exp * 1000).toLocaleString('es-ES')}</span>
+													<span class="jwt-label">{t('admin.users.modal.expires')}:</span>
+													<span class="jwt-value">{new Date(decodedToken.exp * 1000).toLocaleString(localeCode)}</span>
 												</div>
 											{/if}
 										</div>
@@ -1972,7 +1972,7 @@
 						<!-- Date Filters -->
 						<div class="modal-filters">
 							<div class="filter-group">
-								<label for="modal-from">Desde:</label>
+								<label for="modal-from">{t('admin.filters.from')}</label>
 								<input
 									id="modal-from"
 									type="date"
@@ -1981,7 +1981,7 @@
 								/>
 							</div>
 							<div class="filter-group">
-								<label for="modal-to">Hasta:</label>
+								<label for="modal-to">{t('admin.filters.to')}</label>
 								<input
 									id="modal-to"
 									type="date"
@@ -1996,7 +1996,7 @@
 									modalToDate = '';
 								}}
 							>
-								Limpiar filtros
+								{t('admin.filters.clearFilters')}
 							</button>
 						</div>
 
@@ -2022,13 +2022,13 @@
 								<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 									<path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 								</svg>
-								Timeline
+								{t('admin.tabs.timeline')}
 							</button>
 						</div>
 
 						{#if filteredModalEvents.length === 0}
 							<div class="empty-state-modal">
-								<p>No hay registros para este usuario en el período seleccionado</p>
+								<p>{t('admin.users.modal.noRecordsForUser')}</p>
 							</div>
 						{:else if modalViewType === 'daily'}
 							<!-- Daily Summary View -->
@@ -2077,7 +2077,7 @@
 									</tbody>
 									<tfoot>
 										<tr class="totals-row">
-											<td colspan="4"><strong>TOTAL</strong></td>
+											<td colspan="4"><strong>{t('admin.users.modal.total')}</strong></td>
 											<td class="hours-cell"><strong>{modalTotalHours.worked.toFixed(2)} h</strong></td>
 											<td class="hours-cell"><strong>{modalTotalHours.break.toFixed(2)} h</strong></td>
 											<td class="hours-cell total"><strong>{modalTotalHours.total.toFixed(2)} h</strong></td>
@@ -2142,10 +2142,10 @@
 											<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 											<polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 										</svg>
-										<div class="option-content">
-											<div class="option-title">CSV</div>
-											<div class="option-desc">Compatible con Excel y hojas de cálculo</div>
-										</div>
+									<div class="option-content">
+										<div class="option-title">CSV</div>
+										<div class="option-desc">{t('admin.export.csvDesc')}</div>
+									</div>
 									</button>
 
 									<button class="export-option" onclick={exportModalDataExcel}>
@@ -2155,10 +2155,10 @@
 											<line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 											<line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 										</svg>
-										<div class="option-content">
-											<div class="option-title">Excel (XLSX)</div>
-											<div class="option-desc">Hojas múltiples con formato profesional</div>
-										</div>
+									<div class="option-content">
+										<div class="option-title">Excel (XLSX)</div>
+										<div class="option-desc">{t('admin.export.xlsxDesc')}</div>
+									</div>
 									</button>
 
 									<button class="export-option" onclick={exportModalDataJSON}>
@@ -2167,10 +2167,10 @@
 											<polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 											<path d="M10 12h4M10 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 										</svg>
-										<div class="option-content">
-											<div class="option-title">JSON</div>
-											<div class="option-desc">Para integraciones y desarrollo</div>
-										</div>
+									<div class="option-content">
+										<div class="option-title">JSON</div>
+										<div class="option-desc">{t('admin.export.jsonDesc')}</div>
+									</div>
 									</button>
 
 									<button class="export-option" onclick={exportModalDataPDF}>
@@ -2179,10 +2179,10 @@
 											<polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 											<circle cx="12" cy="15" r="3" stroke="currentColor" stroke-width="2"/>
 										</svg>
-										<div class="option-content">
-											<div class="option-title">PDF/HTML</div>
-											<div class="option-desc">Formato imprimible para auditorías</div>
-										</div>
+									<div class="option-content">
+										<div class="option-title">PDF/HTML</div>
+										<div class="option-desc">{t('admin.export.pdfDesc')}</div>
+									</div>
 									</button>
 								</div>
 							{/if}

@@ -44,10 +44,7 @@ function normalizePlacenetPayload(payload: any): JWTPayload | null {
 		return null;
 	}
 
-	// Map Placenet fields (snake_case) to Shift format (camelCase)
-	// Always normalize regardless of Placenet mode to ensure consistent format
 	const normalized: JWTPayload = {
-		userId: parseInt(avatarId.replace(/\D/g, '')) || 0,
 		avatarId: avatarId,
 		name: payload.avatar_name || payload.name || 'Usuario',
 		role: payload.role || 'worker',

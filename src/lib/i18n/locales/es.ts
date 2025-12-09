@@ -106,11 +106,14 @@ export default {
 	admin: {
 		title: 'Panel de Administración',
 		subtitle: 'Control Horario - Shift',
+		refresh: 'Actualizar',
+		refreshing: 'Actualizando...',
 		tabs: {
 			timeRecords: 'Registros de Tiempo',
 			users: 'Usuarios',
 			timeline: 'Línea de Tiempo',
-			timelineChrono: 'Timeline Cronológico'
+			timelineChrono: 'Timeline Cronológico',
+			chronologicalActivity: 'Registro Cronológico de Actividad'
 		},
 		viewModes: {
 			summary: 'Resumen',
@@ -128,7 +131,10 @@ export default {
 			allEvents: 'Todos los eventos',
 			domain: 'Dominio:',
 			allDomains: 'Todos los dominios',
-			noFilter: 'Sin filtro'
+			noFilter: 'Sin filtro',
+			clearFilters: 'Limpiar filtros',
+			since: 'Desde',
+			until: 'Hasta'
 		},
 		export: {
 			export: 'Exportar',
@@ -142,7 +148,13 @@ export default {
 			generateDate: 'Fecha de generación',
 			period: 'Período',
 			start: 'Inicio',
-			present: 'Presente'
+			present: 'Presente',
+			csvDesc: 'Compatible con Excel y hojas de cálculo',
+			xlsxDesc: 'Hojas múltiples con formato profesional',
+			jsonDesc: 'Para integraciones y desarrollo',
+			pdfDesc: 'Formato imprimible para auditorías',
+			allUsersInPeriod: 'Todos los usuarios del período seleccionado',
+			structuredData: 'Datos estructurados para integraciones'
 		},
 		summary: {
 			generalSummary: 'RESUMEN GENERAL',
@@ -253,7 +265,26 @@ export default {
 			searchPlaceholder: 'Buscar por nombre o email...',
 			viewDetails: 'Ver detalle',
 			userDetails: 'Datos del Usuario',
-			fullHistory: 'Historial Completo'
+			fullHistory: 'Historial Completo',
+			modal: {
+				name: 'Nombre',
+				avatarId: 'Avatar ID',
+				id: 'ID',
+				role: 'Rol',
+				domainName: 'Domain Name',
+				domainId: 'Domain ID',
+				state: 'Estado',
+				active: 'Activo',
+				inactive: 'Inactivo',
+				created: 'Creado',
+				jwtInfo: 'Información del Token JWT',
+				issued: 'Emitido',
+				expires: 'Expira',
+				noRecordsForUser: 'No hay registros para este usuario en el período seleccionado',
+				showingRecords: 'Mostrando los últimos {count} registros de {total} totales',
+				total: 'TOTAL',
+				generatedBy: 'Generado por Sistema de Control de Horarios'
+			}
 		}
 	},
 	history: {
