@@ -29,40 +29,47 @@ function getJWKS() {
 
 /**
  * Normalize Placenet JWT payload to Shift format
+ * Returns null if avatarId is missing (required field)
  */
-function normalizePlacenetPayload(payload: any): JWTPayload {
-	if (!isPlacenetEnabled()) {
-		return payload as JWTPayload;
+function normalizePlacenetPayload(payload: any): JWTPayload | null {
+	if (!payload) {
+		console.error('[Auth] normalizePlacenetPayload received null/undefined payload');
+		return null;
 	}
 
-	// If already in shift format, return as is
-	if (payload.userId || payload.avatarId || payload.name) {
-		return payload as JWTPayload;
+	// Extract avatarId early - it's required
+	const avatarId = payload.avatarId || payload.avatar_id;
+	if (!avatarId) {
+		console.error('[Auth] Token payload missing required avatarId field. Available fields:', Object.keys(payload));
+		return null;
 	}
 
-	// Map Placenet fields (may come as snake_case) to Shift format (camelCase)
-	const avatarId = payload.avatar_id || payload.avatarId;
+	// Map Placenet fields (snake_case) to Shift format (camelCase)
+	// Always normalize regardless of Placenet mode to ensure consistent format
 	const normalized: JWTPayload = {
-		userId: avatarId ? parseInt(avatarId.replace(/\D/g, '')) || 0 : 0,
+		userId: parseInt(avatarId.replace(/\D/g, '')) || 0,
 		avatarId: avatarId,
 		name: payload.avatar_name || payload.name || 'Usuario',
 		role: payload.role || 'worker',
-		domainId: payload.domain_id || payload.domainId,
-		domainName: payload.domain_name || payload.domainName,
-		tenantId: payload.tenant_id || payload.tenantId,
+		domainId: payload.domain_id || payload.domainId || '',
+		domainName: payload.domain_name || payload.domainName || '',
+		tenantId: payload.tenant_id || payload.tenantId || '',
 		iat: payload.iat,
 		exp: payload.exp
 	};
 
-	// Determine role based on tags
-	const placenetConfig = getPlacenetConfig();
-	const adminTags = placenetConfig.admin_tags || [];
-	const userTags = payload.domain_tags || payload.tags || [];
+	// Determine role based on tags (only if Placenet is enabled)
+	if (isPlacenetEnabled()) {
+		const placenetConfig = getPlacenetConfig();
+		const adminTags = placenetConfig.admin_tags || [];
+		const userTags = payload.domain_tags || payload.tags || [];
 
-	if (adminTags.some(tag => userTags.includes(tag)) || payload.role === 'admin') {
-		normalized.role = 'admin';
+		if (adminTags.some(tag => userTags.includes(tag)) || payload.role === 'admin') {
+			normalized.role = 'admin';
+		}
 	}
 
+	console.log('[Auth] Normalized token for:', normalized.avatarId, 'role:', normalized.role);
 	return normalized;
 }
 
@@ -86,11 +93,17 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 			try {
 				const JWKS = getJWKS();
 				const { payload } = await jwtVerify(token, JWKS, {
-					algorithms: ['RS256']
+					algorithms: ['RS256'],
+					clockTolerance: 60 // Allow 60 seconds clock skew
 				});
 
-				// Normalize if it's a Placenet token
-				return normalizePlacenetPayload(payload as JWTPayload);
+				// Normalize and validate
+				const normalized = normalizePlacenetPayload(payload as JWTPayload);
+				if (!normalized) {
+					console.error('[Auth] RS256 token missing required fields');
+					return null;
+				}
+				return normalized;
 			} catch (error) {
 				console.error('RS256 JWT verification failed:', error);
 				return null;
@@ -102,10 +115,17 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 			try {
 				const secret = getJWTSecret();
 				const payload = jwt.verify(token, secret, {
-					algorithms: ['HS256']
+					algorithms: ['HS256'],
+					clockTolerance: 60 // Allow 60 seconds clock skew
 				}) as JWTPayload;
 
-				return normalizePlacenetPayload(payload);
+				// Normalize and validate
+				const normalized = normalizePlacenetPayload(payload);
+				if (!normalized) {
+					console.error('[Auth] HS256 token missing required fields');
+					return null;
+				}
+				return normalized;
 			} catch (error) {
 				console.error('HS256 JWT verification failed:', error);
 				return null;
@@ -168,10 +188,8 @@ export async function getUserFromToken(token: string): Promise<User | null> {
 
 	// If user doesn't exist and we have valid payload, create it
 	if (!user && payload.name && payload.avatarId) {
-		console.log(payload);
-		console.log(payload.tenantId);
 		try {
-			console.log(`[Auth] Auto-creating user: ${payload.avatarId} (${payload.name}) ${payload.tenantId}`);
+			console.log(`[Auth] Auto-creating user: ${payload.avatarId} (${payload.name}) tenant:${payload.tenantId} domain:${payload.domainId}`);
 			const userId = await queries.createUser(
 				payload.avatarId,
 				payload.name,
@@ -182,14 +200,17 @@ export async function getUserFromToken(token: string): Promise<User | null> {
 			);
 			user = await queries.getUserById(userId);
 			if (user) {
-				console.log(`[Auth] Successfully created user: ${user.avatarId} (ID: ${user.id})`);
+				console.log(`[Auth] ✓ Successfully created user: ${user.avatarId} (ID: ${user.id}) role: ${user.role}`);
 			} else {
-				console.error(`[Auth] Failed to retrieve created user with ID: ${userId}`);
+				console.error(`[Auth] ✗ Failed to retrieve created user with ID: ${userId}`);
 			}
 		} catch (error) {
-			console.error('[Auth] Error creating user:', error);
+			console.error('[Auth] ✗ Error creating user:', error);
 			return null;
 		}
+	} else if (!user && payload.avatarId) {
+		console.error('[Auth] ✗ User does not exist and missing required fields to create. avatarId:', payload.avatarId, 'name:', payload.name);
+		return null;
 	} else if (user) {
 		// Update user role and domain info if token has different information
 		const updates: { role?: 'worker' | 'admin'; domain_id?: string; domain_name?: string; name?: string } = {};

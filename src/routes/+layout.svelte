@@ -1,23 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import favicon from '$lib/assets/favicon.svg';
 	import LanguageSelector from '$lib/components/LanguageSelector.svelte';
 
 	let { children } = $props();
 
-	// Set token synchronously before render to avoid timing issues
-	if (browser) {
-		const urlToken = new URLSearchParams(window.location.search).get('token');
-		if (urlToken) {
-			window.__authToken = urlToken;
-		}
-	}
-
 	function handleMessage(event: MessageEvent) {
 		if (event.data.type === 'auth') {
 			window.__authToken = event.data.token;
+			
+			// Dispatch custom event so page component knows token is ready
+			window.dispatchEvent(new CustomEvent('tokenReady'));
+			
 			if (event.data.goto) {
 				goto(event.data.goto);
 			}
@@ -28,15 +23,12 @@
 	}
 
 	onMount(() => {
-		if (!browser) return;
-
 		// Fetch override for automatic token injection
 		const originalFetch = window.fetch;
 		window.fetch = function (input: RequestInfo | URL, init: RequestInit = {}) {
 			if (window.__authToken) {
 				const url = typeof input === 'string' ? input : (input as Request).url;
 				if (new URL(url, window.location.origin).origin === window.location.origin) {
-					// Create a new init object with headers
 					const headers = new Headers(init.headers);
 					headers.set('x-auth-token', window.__authToken);
 					init = { ...init, headers };
@@ -45,19 +37,14 @@
 			return originalFetch(input, init);
 		};
 
-		// Check for token in URL (in case it wasn't set synchronously)
+		// Check for token in URL
 		const urlToken = new URLSearchParams(window.location.search).get('token');
-		if (urlToken && !window.__authToken) {
-			window.__authToken = urlToken;
-		}
-
-		// Remove token from URL if present (do this after a small delay to avoid navigation issues)
 		if (urlToken) {
-			setTimeout(() => {
-				goto(window.location.pathname, { replaceState: true, noScroll: true });
-			}, 10);
-		} else if (!window.__authToken) {
-			// Only send READY if we don't have a token
+			window.__authToken = urlToken;
+			window.history.replaceState({}, '', window.location.pathname);
+			// Dispatch event so page knows token is ready
+			window.dispatchEvent(new CustomEvent('tokenReady'));
+		} else {
 			window.parent.postMessage('READY', '*');
 		}
 

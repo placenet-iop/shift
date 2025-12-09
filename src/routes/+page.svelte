@@ -10,12 +10,6 @@
 	// Make formatDateTime reactive
 	let formatDateTimeI18n = $derived.by(() => $formatDateTimeStore);
 
-	// Initialize token as reactive state
-	let token = $state('');
-	let tokenChecked = $state(false); // Track if we've checked for token
-	let tokenTransitioning = $state(false); // Track if we're transitioning between tokens
-	let previousToken = $state(''); // Track previous token to detect transitions
-
 	// Theme colors from JWT/config
 	let themeColors = $state({
 		primary: '#635FE5', // Default color
@@ -30,28 +24,6 @@
 	// User avatar
 	let userAvatar = $state<string | null>(null);
 	let userInitials = $state<string>('U');
-	
-	if (browser) {
-		// Check URL first (in case layout hasn't processed it yet)
-		const urlToken = new URLSearchParams(window.location.search).get('token');
-		if (urlToken) {
-			token = urlToken;
-			previousToken = urlToken;
-			(window as any).__authToken = urlToken;
-			tokenChecked = true;
-		} else {
-			// Fall back to window.__authToken (set by +layout.svelte)
-			const existingToken = (window as any).__authToken || '';
-			if (existingToken) {
-				token = existingToken;
-				previousToken = existingToken;
-				tokenChecked = true;
-			} else {
-				// Start with tokenChecked = false to show loading, not error
-				// Will be set to true after checking
-			}
-		}
-	}
 
 	let user: any = $state(null);
 	let isAdmin = $state(false);
@@ -64,126 +36,54 @@
 	let showConfirmDialog = $state(false);
 	let pendingAction = $state<{ type: string; label: string } | null>(null);
 	let showHistoryModal = $state(false);
+	let statusLoaded = $state(false); // Track if we've already loaded status
 
 	onMount(() => {
 		if (browser) {
 			// Load theme colors
 			loadTheme();
 
-			// Function to check and update token
-			const checkToken = () => {
-				const currentToken = (window as any).__authToken || '';
-				// Also check URL as fallback
-				const urlToken = new URLSearchParams(window.location.search).get('token');
-				const tokenToUse = currentToken || urlToken || '';
-				
-				if (tokenToUse !== token) {
-					// If we had a token before and now we don't, it might be a transition
-					if (token && !tokenToUse) {
-						// Token was removed - might be switching users
-						// Set transitioning flag to show loading instead of error
-						tokenTransitioning = true;
-						previousToken = token;
-						token = '';
-						// Give a small delay to see if new token arrives
-						setTimeout(() => {
-							const recheckToken = (window as any).__authToken || '';
-							if (!recheckToken) {
-								tokenTransitioning = false;
-								tokenChecked = true;
-							} else {
-								token = recheckToken;
-								previousToken = recheckToken;
-								tokenTransitioning = false;
-								tokenChecked = true;
-								loadStatus();
-							}
-						}, 300);
-					} else if (!token && tokenToUse) {
-						// Token was just set (initial load or new token arrived)
-						token = tokenToUse;
-						previousToken = tokenToUse;
-						tokenTransitioning = false;
-						tokenChecked = true;
-						// Update window.__authToken if we got it from URL
-						if (urlToken && !currentToken) {
-							(window as any).__authToken = urlToken;
-						}
-						loadStatus();
-					} else if (token && tokenToUse && token !== tokenToUse) {
-						// Token changed to a different one (user switch)
-						previousToken = token;
-						token = tokenToUse;
-						tokenTransitioning = false;
-						tokenChecked = true;
-						loadStatus();
-					}
-				} else if (!tokenChecked) {
-					// Mark as checked even if no token found (to prevent flicker)
-					// But only after we've given time for postMessage
-					if (token) {
-						tokenChecked = true;
-					} else {
-						// Wait a bit longer for initial token check
-						// Don't set tokenChecked immediately - wait for postMessage
-						setTimeout(() => {
-							const finalCheck = (window as any).__authToken || '';
-							if (finalCheck) {
-								// Token arrived during wait
-								token = finalCheck;
-								previousToken = finalCheck;
-								tokenChecked = true;
-								loadStatus();
-							} else {
-								// No token found after waiting
-								tokenChecked = true;
-							}
-						}, 500);
-					}
-				}
-			};
-
-			// Check immediately
-			checkToken();
-
-			// Listen for token updates from +layout.svelte (postMessage)
-			const tokenInterval = setInterval(checkToken, 100);
-
-			// Also listen for postMessage events directly
-			const handleMessage = (event: MessageEvent) => {
-				if (event.data?.type === 'auth' && event.data.token) {
-					(window as any).__authToken = event.data.token;
-					// If we're transitioning or haven't checked yet, keep loading state
-					if (tokenTransitioning || !tokenChecked) {
-						// Token is arriving - update immediately
-						token = event.data.token;
-						previousToken = event.data.token;
-						tokenTransitioning = false;
-						tokenChecked = true;
-						loadStatus();
-					} else {
-						// Normal token update
-						checkToken();
-					}
-				}
-			};
-
-			window.addEventListener('message', handleMessage);
-
-			// If we have a token, load status immediately
-			if (token) {
+			// Check if token is already available (e.g., from URL)
+			// Layout's onMount runs first, so token will be set if it was in URL
+			if ((window as any).__authToken && !statusLoaded) {
+				// Token already set, load immediately
 				loadStatus();
+				
+				// Check if user has seen privacy notice
+				const hasSeenPrivacyNotice = localStorage.getItem('privacy_notice_seen');
+				if (!hasSeenPrivacyNotice) {
+					showPrivacyNotice = true;
+				}
 			}
 
-			// Check if user has seen privacy notice (still use localStorage for this preference)
-			const hasSeenPrivacyNotice = localStorage.getItem('privacy_notice_seen');
-			if (!hasSeenPrivacyNotice && token) {
-				showPrivacyNotice = true;
-			}
+			// Listen for custom event when token is ready (dispatched by layout)
+			const handleTokenReady = () => {
+				if ((window as any).__authToken && !statusLoaded) {
+					loadStatus();
+					
+					// Check if user has seen privacy notice
+					const hasSeenPrivacyNotice = localStorage.getItem('privacy_notice_seen');
+					if (!hasSeenPrivacyNotice) {
+						showPrivacyNotice = true;
+					}
+				}
+			};
 
+			// Handle visibility change to refresh status when user returns to tab
+			const handleVisibilityChange = () => {
+				if (!document.hidden && (window as any).__authToken && user) {
+					// Reset and reload status when tab becomes visible again
+					statusLoaded = false;
+					loadStatus();
+				}
+			};
+
+			window.addEventListener('tokenReady', handleTokenReady);
+			document.addEventListener('visibilitychange', handleVisibilityChange);
+			
 			return () => {
-				clearInterval(tokenInterval);
-				window.removeEventListener('message', handleMessage);
+				window.removeEventListener('tokenReady', handleTokenReady);
+				document.removeEventListener('visibilitychange', handleVisibilityChange);
 			};
 		}
 	});
@@ -275,9 +175,21 @@
 	}
 
 	async function loadStatus() {
+		// Prevent loading status multiple times
+		if (statusLoaded) return;
+		statusLoaded = true;
+
 		try {
 			loading = true;
 			error = '';
+
+			const token = (window as any).__authToken;
+			if (!token) {
+				error = 'No authentication token';
+				loading = false;
+				statusLoaded = false; // Reset so it can be retried
+				return;
+			}
 
 			// Decode token to check if user is admin and get user info
 			const payload = decodeToken(token);
@@ -296,6 +208,15 @@
 
 			const response = await fetch('/api/time/status');
 
+			// Handle auth errors
+			if (response.status === 401) {
+				error = t('messages.authenticationFailed');
+				console.error('[Shift] Auth failed - token rejected by server');
+				loading = false;
+				statusLoaded = false; // Reset so it can be retried
+				return;
+			}
+
 			const data = await response.json();
 
 			if (data.success) {
@@ -305,7 +226,9 @@
 				error = data.error || t('messages.failedToLoadStatus');
 			}
 		} catch (e) {
+			console.error('[Shift] Error loading status:', e);
 			error = t('common.connectionError');
+			statusLoaded = false; // Reset so it can be retried
 		} finally {
 			loading = false;
 		}
@@ -356,6 +279,8 @@
 
 			if (data.success) {
 				success = t('messages.timeRecorded');
+				// Reset flag to allow status refresh
+				statusLoaded = false;
 				await loadStatus();
 			} else {
 				error = data.error || t('messages.failedToClock');
@@ -455,15 +380,7 @@
 			<p class="subtitle">{t('common.subtitle')}</p>
 		</header>
 
-		{#if !tokenChecked || tokenTransitioning}
-			<!-- Show loading state while checking for token to prevent flicker -->
-			<div class="login-section">
-				<div class="loading-spinner">
-					<div class="spinner"></div>
-					<p>{t('common.loading')}</p>
-				</div>
-			</div>
-		{:else if !token}
+		{#if !user && !error}
 			<div class="loading-screen">
 				<div class="loading-content">
 					<div class="loading-spinner">
@@ -471,8 +388,23 @@
 						<div class="spinner-ring"></div>
 						<div class="spinner-ring"></div>
 					</div>
-					<h2 class="loading-title">{t('common.loading') || 'Cargando'}</h2>
-					<p class="loading-text">Esperando autenticación desde el sistema...</p>
+					<h2 class="loading-title">{t('common.loading')}</h2>
+					<p class="loading-text">{t('messages.waitingForAuthentication')}</p>
+				</div>
+			</div>
+		{:else if error && !user}
+			<div class="error-screen">
+				<div class="error-content">
+					<div class="error-icon">
+						<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
+							<circle cx="12" cy="12" r="10"></circle>
+							<line x1="12" y1="8" x2="12" y2="12"></line>
+							<line x1="12" y1="16" x2="12.01" y2="16"></line>
+						</svg>
+					</div>
+					<h2 class="error-title">{t('messages.authenticationError')}</h2>
+					<p class="error-text">{error}</p>
+					<p class="error-help">{t('messages.contactAdministrator')}</p>
 				</div>
 			</div>
 		{:else}
@@ -480,11 +412,11 @@
 			{#if showConfirmDialog && pendingAction}
 				<div class="confirm-overlay" onclick={cancelAction}>
 					<div class="confirm-dialog" onclick={(e) => e.stopPropagation()}>
-						<h3>Confirmar Acción</h3>
-						<p>¿Estás seguro de que deseas <strong>{pendingAction.label}</strong>?</p>
+						<h3>{t('messages.confirmAction')}</h3>
+						<p>{t('messages.areYouSure')} <strong>{pendingAction.label}</strong>?</p>
 						<div class="confirm-actions">
-							<button class="btn-cancel" onclick={cancelAction}>Cancelar</button>
-							<button class="btn-confirm" data-action-type={pendingAction.type} onclick={confirmAction}>Confirmar</button>
+							<button class="btn-cancel" onclick={cancelAction}>{t('common.cancel')}</button>
+							<button class="btn-confirm" data-action-type={pendingAction.type} onclick={confirmAction}>{t('messages.confirm')}</button>
 						</div>
 					</div>
 				</div>
@@ -576,14 +508,14 @@
 
 				<!-- Status Card (Clear Visual Distinction) -->
 				<div class="status-display-card">
-					<div class="status-label">Estado actual</div>
+					<div class="status-label">{t('status.currentState')}</div>
 					<div class="status-value" style="color: {getStatusColor(status)}">
 						<span class="status-dot-large" style="background-color: {getStatusColor(status)}"></span>
 						{getStatusText(status)}
 					</div>
 					{#if latestEvent}
 						<div class="status-time-info">
-							Último registro: {formatDateTime(latestEvent.ts)}
+							{t('status.lastRecordColon')} {formatDateTime(latestEvent.ts)}
 						</div>
 					{/if}
 				</div>
@@ -669,7 +601,12 @@
 		{/if}
 
 		<!-- History Modal -->
-		<HistoryModal bind:show={showHistoryModal} onClose={() => (showHistoryModal = false)} />
+		<HistoryModal bind:show={showHistoryModal} onClose={() => {
+			showHistoryModal = false;
+			// Refresh status when closing history modal
+			statusLoaded = false;
+			loadStatus();
+		}} />
 	</div>
 </main>
 
@@ -1770,5 +1707,56 @@
 		font-size: 0.875rem;
 		color: #6b7280;
 		margin: 0;
+	}
+
+	/* Error Screen */
+	.error-screen {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 100vh;
+		background: #f9fafb;
+		padding: 2rem;
+	}
+
+	.error-content {
+		text-align: center;
+		max-width: 400px;
+		background: white;
+		padding: 2rem;
+		border-radius: 16px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.error-icon {
+		margin: 0 auto 1rem;
+		animation: shake 0.5s ease-in-out;
+	}
+
+	@keyframes shake {
+		0%, 100% { transform: translateX(0); }
+		25% { transform: translateX(-10px); }
+		75% { transform: translateX(10px); }
+	}
+
+	.error-title {
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin: 0 0 0.75rem 0;
+		color: #dc2626;
+	}
+
+	.error-text {
+		font-size: 1rem;
+		color: #374151;
+		margin: 0 0 1rem 0;
+		line-height: 1.5;
+	}
+
+	.error-help {
+		font-size: 0.875rem;
+		color: #6b7280;
+		margin: 0;
+		line-height: 1.5;
 	}
 </style>

@@ -310,17 +310,17 @@
 		if (format === 'csv') {
 			// Create CSV
 			const headers = [
-				'Usuario',
-				'Avatar ID',
-				'Dominio',
-				'ID Dominio',
-				'Fecha',
-				'Primera Entrada',
-				'Última Salida',
-				'Horas Trabajadas',
-				'Pausas (h)',
-				'Total (h)',
-				'Número de Registros'
+				t('admin.users.tableHeaders.user'),
+				t('admin.users.tableHeaders.avatarId'),
+				t('admin.users.tableHeaders.domain'),
+				t('admin.users.tableHeaders.domainId'),
+				t('admin.users.tableHeaders.date'),
+				t('admin.users.tableHeaders.firstEntry'),
+				t('admin.users.tableHeaders.lastExit'),
+				t('admin.users.tableHeaders.hoursWorked'),
+				t('admin.users.tableHeaders.breakTime') + ' (h)',
+				t('admin.users.tableHeaders.total') + ' (h)',
+				t('admin.summary.numRecords')
 			];
 
 			const rows = userDailyBreakdown.map(record => [
@@ -822,8 +822,8 @@
 		csvLines.push('');
 
 		// Summary section
-		csvLines.push('# RESUMEN GENERAL');
-		csvLines.push('Días trabajados,Horas totales,Tiempo de descanso,Tiempo total');
+		csvLines.push(`# ${t('admin.summary.generalSummary')}`);
+		csvLines.push(`${t('admin.summary.daysWorked')},${t('admin.summary.totalHours')},${t('admin.summary.breakTime')},${t('admin.summary.totalTime')}`);
 		csvLines.push(
 			`${dailySummaries.length},${modalTotalHours.worked.toFixed(2)},${modalTotalHours.break.toFixed(2)},${modalTotalHours.total.toFixed(2)}`
 		);
@@ -842,8 +842,8 @@
 		});
 
 		csvLines.push('');
-		csvLines.push('# REGISTROS DETALLADOS');
-		csvLines.push('Fecha,Hora,Tipo de evento,Origen,IP,User Agent');
+		csvLines.push(`# ${t('admin.summary.detailedRecords').toUpperCase()}`);
+		csvLines.push(`${t('admin.users.tableHeaders.date')},${t('admin.users.tableHeaders.time')},${t('admin.report.eventType')},${t('admin.report.source')},${t('admin.report.ip')},${t('admin.report.userAgent')}`);
 
 		filteredModalEvents.forEach((event) => {
 			const eventDate = new Date(event.ts);
@@ -875,7 +875,7 @@
 
 		// Create workbook with multiple sheets
 		const workbook = {
-			SheetNames: ['Resumen', 'Por Días', 'Registros Detallados'],
+			SheetNames: [t('admin.summary.summary'), t('admin.summary.daily'), t('admin.summary.detailedRecords')],
 			Sheets: {} as any
 		};
 
@@ -890,8 +890,8 @@
 			['Fecha de generación:', new Date().toLocaleString('es-ES')],
 			['Período:', `${modalFromDate || 'Inicio'} a ${modalToDate || 'Presente'}`],
 			[''],
-			['RESUMEN GENERAL'],
-			['Días trabajados', 'Horas totales', 'Tiempo de descanso', 'Tiempo total'],
+			[t('admin.summary.generalSummary')],
+			[t('admin.summary.daysWorked'), t('admin.summary.totalHours'), t('admin.summary.breakTime'), t('admin.summary.totalTime')],
 			[
 				dailySummaries.length,
 				modalTotalHours.worked.toFixed(2),
@@ -899,11 +899,11 @@
 				modalTotalHours.total.toFixed(2)
 			]
 		];
-		workbook.Sheets['Resumen'] = arrayToSheet(summaryData);
+		workbook.Sheets[t('admin.summary.summary')] = arrayToSheet(summaryData);
 
 		// Sheet 2: Daily breakdown
 		const dailyData = [
-			['Fecha', 'Día', 'Primera entrada', 'Última salida', 'Horas trabajadas', 'Tiempo descanso', 'Total', 'Núm. registros']
+			[t('admin.users.tableHeaders.date'), t('admin.users.tableHeaders.day'), t('admin.users.tableHeaders.firstEntry'), t('admin.users.tableHeaders.lastExit'), t('admin.users.tableHeaders.hoursWorked'), t('admin.users.tableHeaders.breakTime'), t('admin.users.tableHeaders.total'), t('admin.summary.numRecords')]
 		];
 		dailySummaries.forEach((day) => {
 			const dayName = day.dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
@@ -929,11 +929,11 @@
 			modalTotalHours.total.toFixed(2),
 			filteredModalEvents.length.toString()
 		]);
-		workbook.Sheets['Por Días'] = arrayToSheet(dailyData);
+		workbook.Sheets[t('admin.summary.daily')] = arrayToSheet(dailyData);
 
 		// Sheet 3: Detailed records
 		const detailedData = [
-			['Fecha', 'Hora', 'Tipo de evento', 'Origen', 'IP', 'User Agent']
+			[t('admin.users.tableHeaders.date'), t('admin.users.tableHeaders.time'), t('admin.report.eventType'), t('admin.report.source'), t('admin.report.ip'), t('admin.report.userAgent')]
 		];
 		filteredModalEvents.forEach((event) => {
 			const eventDate = new Date(event.ts);
@@ -1214,23 +1214,23 @@
 		<div class="info-row"><span class="info-label">Período:</span><span class="info-value">${modalFromDate || 'Inicio'} a ${modalToDate || 'Presente'}</span></div>
 	</div>
 
-	<h2>Resumen General</h2>
+	<h2>${t('admin.summary.generalSummaryHeading')}</h2>
 	<div class="summary-cards">
 		<div class="summary-card">
-			<div class="summary-label">Días trabajados</div>
+			<div class="summary-label">${t('admin.summary.daysWorked')}</div>
 			<div class="summary-value">${dailySummaries.length}</div>
 		</div>
 		<div class="summary-card highlight">
-			<div class="summary-label">Horas totales</div>
+			<div class="summary-label">${t('admin.summary.totalHours')}</div>
 			<div class="summary-value">${modalTotalHours.total.toFixed(2)} h</div>
 		</div>
 		<div class="summary-card">
-			<div class="summary-label">Tiempo descanso</div>
+			<div class="summary-label">${t('admin.summary.breakTime')}</div>
 			<div class="summary-value">${modalTotalHours.break.toFixed(2)} h</div>
 		</div>
 	</div>
 
-	<h2>Desglose por Días</h2>
+	<h2>${t('admin.summary.dailyBreakdownHeading')}</h2>
 	<table>
 		<thead>
 			<tr>
@@ -1449,8 +1449,8 @@
 							<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
-							Exportar
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="chevron">
+				{t('admin.export.export')}
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="chevron">
 								<path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 							</svg>
 						</button>
@@ -1505,7 +1505,7 @@
 						stroke-linejoin="round"
 					/>
 				</svg>
-				Usuarios
+				{t('admin.tabs.users')}
 			</button>
 			<button class="tab" class:active={currentTab === 'timeline'} onclick={() => (currentTab = 'timeline')}>
 				<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -1538,7 +1538,7 @@
 					</svg>
 					<input
 						type="text"
-						placeholder="Buscar por nombre o email..."
+						placeholder={t('admin.users.searchPlaceholder')}
 						bind:value={searchQuery}
 					/>
 				</div>
@@ -1578,7 +1578,7 @@
 					<svg width="18" height="18" viewBox="0 0 24 24" fill="none">
 						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 					</svg>
-					Exportar CSV
+					{t('admin.export.exportCSV')}
 				</button>
 			</div>
 
@@ -1596,7 +1596,7 @@
 							<rect x="3" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/>
 							<rect x="14" y="14" width="7" height="7" stroke="currentColor" stroke-width="2" rx="1"/>
 						</svg>
-						Resumen
+						{t('admin.summary.summary')}
 					</button>
 					<button
 						class="view-mode-btn"
@@ -1607,7 +1607,7 @@
 							<rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/>
 							<path d="M3 10h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
 						</svg>
-						Por Días
+						{t('admin.viewModes.daily')}
 					</button>
 				</div>
 			{/if}
@@ -1619,19 +1619,19 @@
 					<thead>
 						<tr>
 							<th onclick={() => toggleSort('name')} class="sortable">
-								Usuario
+								{t('admin.users.tableHeaders.user')}
 								{#if sortField === 'name'}
 									<span class="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
 								{/if}
 							</th>
 							<th onclick={() => toggleSort('status')} class="sortable">
-								Estado
+								{t('admin.users.tableHeaders.state')}
 								{#if sortField === 'status'}
 									<span class="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
 								{/if}
 							</th>
-							<th>Fecha</th>
-							<th>Inicio</th>
+							<th>{t('admin.users.tableHeaders.date')}</th>
+							<th>{t('admin.users.tableHeaders.start')}</th>
 							<th>Fin</th>
 							<th>Horas</th>
 							<th>Pausas</th>
@@ -1701,7 +1701,7 @@
 			<!-- Daily Breakdown Table -->
 			<div class="table-container">
 				<div class="daily-breakdown-header">
-					<h3>Desglose por Días</h3>
+					<h3>{t('admin.summary.dailyBreakdownHeading')}</h3>
 					<div class="export-buttons">
 						<button class="btn-export-mini" onclick={() => exportDailyBreakdown('csv')}>
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -1720,16 +1720,16 @@
 				<table class="daily-breakdown-table">
 					<thead>
 						<tr>
-							<th>Usuario</th>
-							<th>Avatar ID</th>
-							<th>Dominio</th>
-							<th>Fecha</th>
-							<th>Primera Entrada</th>
-							<th>Última Salida</th>
-							<th>Horas Trabajadas</th>
-							<th>Pausas</th>
-							<th>Total</th>
-							<th>Registros</th>
+							<th>{t('admin.users.tableHeaders.user')}</th>
+							<th>{t('admin.users.tableHeaders.avatarId')}</th>
+							<th>{t('admin.users.tableHeaders.domain')}</th>
+							<th>{t('admin.users.tableHeaders.date')}</th>
+							<th>{t('admin.users.tableHeaders.firstEntry')}</th>
+							<th>{t('admin.users.tableHeaders.lastExit')}</th>
+							<th>{t('admin.users.tableHeaders.hoursWorked')}</th>
+							<th>{t('admin.users.tableHeaders.breakTime')}</th>
+							<th>{t('admin.users.tableHeaders.total')}</th>
+							<th>{t('admin.users.tableHeaders.records')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -1846,7 +1846,7 @@
 								<div class="timeline-user">
 									<span class="user-avatar-tiny">{event.avatar_name?.charAt(0).toUpperCase() || user?.name.charAt(0).toUpperCase() || '?'}</span>
 									<div>
-										<strong>{event.avatar_name || user?.name || 'Usuario desconocido'}</strong>
+										<strong>{event.avatar_name || user?.name || t('admin.report.unknownUser')}</strong>
 										<div class="timeline-user-meta">
 											<span>(ID: {event.avatarId || user?.id})</span>
 											{#if event.domain_id || user?.domain_id}
@@ -2012,7 +2012,7 @@
 									<line x1="3" y1="9" x2="21" y2="9" stroke="currentColor" stroke-width="2"/>
 									<line x1="9" y1="9" x2="9" y2="22" stroke="currentColor" stroke-width="2"/>
 								</svg>
-								Vista por Días
+								{t('admin.report.viewDaily')}
 							</button>
 							<button
 								class="modal-tab"
@@ -2034,15 +2034,15 @@
 							<!-- Daily Summary View -->
 							<div class="modal-totals">
 								<div class="total-card">
-									<div class="total-label">Días trabajados</div>
+									<div class="total-label">{t('admin.summary.daysWorked')}</div>
 									<div class="total-value">{dailySummaries.length}</div>
 								</div>
 								<div class="total-card highlight">
-									<div class="total-label">Horas totales</div>
+									<div class="total-label">{t('admin.summary.totalHours')}</div>
 									<div class="total-value">{modalTotalHours.total.toFixed(2)} h</div>
 								</div>
 								<div class="total-card">
-									<div class="total-label">Tiempo descanso</div>
+									<div class="total-label">{t('admin.summary.breakTime')}</div>
 									<div class="total-value">{modalTotalHours.break.toFixed(2)} h</div>
 								</div>
 							</div>

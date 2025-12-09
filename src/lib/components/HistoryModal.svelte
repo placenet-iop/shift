@@ -281,7 +281,7 @@
 	<div class="modal-overlay" onclick={handleClose}>
 		<div class="modal-container" onclick={(e) => e.stopPropagation()}>
 			<div class="modal-header">
-				<h2>Registro de Jornadas</h2>
+				<h2>{t('history.modalTitle')}</h2>
 				<button class="close-btn" onclick={handleClose}>
 					<svg width="20" height="20" viewBox="0 0 20 20" fill="none">
 						<path
@@ -327,7 +327,7 @@
 							</button>
 						</div>
 
-						<button class="today-btn" onclick={goToToday}>Hoy</button>
+						<button class="today-btn" onclick={goToToday}>{t('history.today')}</button>
 
 						<div class="calendar-grid">
 							{#each dayNames as day}
@@ -463,7 +463,7 @@
 						{#if loading}
 							<div class="loading-state">
 								<div class="spinner"></div>
-								<p>Cargando registros...</p>
+								<p>{t('history.loadingRecords')}</p>
 							</div>
 						{:else if events.length === 0}
 							<div class="empty-state">
@@ -497,7 +497,7 @@
 										stroke-linejoin="round"
 									/>
 								</svg>
-								<p>No hay registros para esta fecha</p>
+								<p>{t('history.noRecordsForDate')}</p>
 							</div>
 						{:else}
 							<!-- Summary -->
@@ -523,7 +523,7 @@
 											</svg>
 										</div>
 										<div class="stat-info">
-											<div class="stat-label">Tiempo trabajado</div>
+											<div class="stat-label">{t('history.timeWorked')}</div>
 											<div class="stat-value">{formatMinutes(dailyStats.totalWorked)}</div>
 										</div>
 									</div>
@@ -548,7 +548,7 @@
 											</svg>
 										</div>
 										<div class="stat-info">
-											<div class="stat-label">Tiempo de descanso</div>
+											<div class="stat-label">{t('history.breakTime')}</div>
 											<div class="stat-value">{formatMinutes(dailyStats.totalBreak)}</div>
 										</div>
 									</div>

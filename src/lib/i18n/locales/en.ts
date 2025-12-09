@@ -48,7 +48,9 @@ export default {
 		working: 'Working',
 		inactive: 'Inactive',
 		lastRecord: 'Last record:',
-		noRecords: 'No records yet'
+		lastRecordColon: 'Last record:',
+		noRecords: 'No records yet',
+		currentState: 'Current state'
 	},
 	buttons: {
 		clockIn: 'Clock In',
@@ -70,7 +72,14 @@ export default {
 		failedToLoadUsers: 'Failed to load users',
 		exportFailed: 'Export failed',
 		exportError: 'Export error',
-		noAdminPermissions: 'You do not have administrator permissions'
+		noAdminPermissions: 'You do not have administrator permissions',
+		authenticationError: 'Authentication Error',
+		authenticationFailed: 'Authentication failed. Please contact the administrator.',
+		waitingForAuthentication: 'Waiting for authentication from the system...',
+		contactAdministrator: 'If the problem persists, contact the system administrator.',
+		confirmAction: 'Confirm Action',
+		areYouSure: 'Are you sure you want to',
+		confirm: 'Confirm'
 	},
 	privacy: {
 		title: 'Data Protection Information',
@@ -99,7 +108,13 @@ export default {
 		subtitle: 'Time Tracking - Shift',
 		tabs: {
 			timeRecords: 'Time Records',
-			users: 'Users'
+			users: 'Users',
+			timeline: 'Timeline'
+		},
+		viewModes: {
+			summary: 'Summary',
+			daily: 'Daily',
+			dailyView: 'Daily View'
 		},
 		filters: {
 			searchFilters: 'Search Filters',
@@ -111,7 +126,47 @@ export default {
 			eventType: 'Event Type:',
 			allEvents: 'All events',
 			domain: 'Domain:',
-			allDomains: 'All domains'
+			allDomains: 'All domains',
+			noFilter: 'No filter'
+		},
+		export: {
+			export: 'Export',
+			exportCSV: 'Export CSV',
+			exportXLSX: 'Export XLSX',
+			exportPDF: 'Export PDF',
+			exportReport: 'Export Report',
+			generalReport: 'General Time Tracking Report',
+			userReport: 'TIME TRACKING REPORT',
+			hourReport: 'Time Tracking Report',
+			generateDate: 'Generation date',
+			period: 'Period',
+			start: 'Start',
+			present: 'Present'
+		},
+		summary: {
+			generalSummary: 'GENERAL SUMMARY',
+			dailyBreakdown: 'Daily Breakdown',
+			detailedRecords: 'Detailed Records',
+			daysWorked: 'Days worked',
+			totalHours: 'Total hours',
+			breakTime: 'Break time',
+			totalTime: 'Total time',
+			numRecords: 'Num. records',
+			summary: 'Summary',
+			daily: 'Daily',
+			generalSummaryHeading: 'General Summary',
+			dailyBreakdownHeading: 'Daily Breakdown'
+		},
+		report: {
+			eventType: 'Event type',
+			source: 'Source',
+			userAgent: 'User Agent',
+			ip: 'IP',
+			unknownUser: 'Unknown user',
+			noData: 'No data',
+			close: 'Close',
+			viewTimeline: 'Timeline View',
+			viewDaily: 'Daily View'
 		},
 		events: {
 			loadingRecords: 'Loading records...',
@@ -139,15 +194,31 @@ export default {
 				domain: 'Domain',
 				activity: 'Activity (30 days)',
 				lastRecord: 'Last Record',
-				registered: 'Registered'
+				registered: 'Registered',
+				avatarId: 'Avatar ID',
+				domainId: 'Domain ID',
+				date: 'Date',
+				firstEntry: 'First Entry',
+				lastExit: 'Last Exit',
+				hoursWorked: 'Hours worked',
+				breakTime: 'Break time',
+				total: 'Total',
+				records: 'Records',
+				day: 'Day',
+				time: 'Time',
+				start: 'Start',
+				end: 'End',
+				state: 'State'
 			},
 			roles: {
 				admin: 'Admin',
-				worker: 'Worker'
+				worker: 'Worker',
+				role: 'Role'
 			},
 			status: {
 				active: 'Active',
-				inactive: 'Inactive'
+				inactive: 'Inactive',
+				noStatus: 'No Status'
 			},
 			stats: {
 				total: 'Total:',
@@ -155,19 +226,28 @@ export default {
 				clockOuts: 'Clock Outs:'
 			},
 			noRecords: 'No records',
-			loading: 'Loading...'
+			loading: 'Loading...',
+			searchPlaceholder: 'Search by name or email...',
+			viewDetails: 'View details',
+			userDetails: 'User Details',
+			fullHistory: 'Full History'
 		}
 	},
 	history: {
 		title: 'Time Records History',
+		modalTitle: 'Work Time Records',
 		from: 'From:',
 		to: 'To:',
+		today: 'Today',
 		loadingRecords: 'Loading records...',
 		noRecords: 'No records found in the selected period',
+		noRecordsForDate: 'No records for this date',
 		totalRecords: 'Total records:',
 		worker: 'Worker:',
 		domain: 'Domain:',
-		weeklySummary: 'Weekly hours overview'
+		weeklySummary: 'Weekly hours overview',
+		timeWorked: 'Time worked',
+		breakTime: 'Break time'
 	},
 	events: {
 		clockIn: 'Clock In',

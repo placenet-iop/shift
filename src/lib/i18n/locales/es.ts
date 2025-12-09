@@ -48,7 +48,9 @@ export default {
 		working: 'Trabajando',
 		inactive: 'Inactivo',
 		lastRecord: 'Último registro:',
-		noRecords: 'Aún no hay registros'
+		lastRecordColon: 'Último registro:',
+		noRecords: 'Aún no hay registros',
+		currentState: 'Estado actual'
 	},
 	buttons: {
 		clockIn: 'Fichar Entrada',
@@ -70,7 +72,14 @@ export default {
 		failedToLoadUsers: 'Error al cargar los usuarios',
 		exportFailed: 'Error en la exportación',
 		exportError: 'Error de exportación',
-		noAdminPermissions: 'No tienes permisos de administrador'
+		noAdminPermissions: 'No tienes permisos de administrador',
+		authenticationError: 'Error de Autenticación',
+		authenticationFailed: 'Autenticación fallida. Por favor, contacta con el administrador.',
+		waitingForAuthentication: 'Esperando autenticación desde el sistema...',
+		contactAdministrator: 'Si el problema persiste, contacta con el administrador del sistema.',
+		confirmAction: 'Confirmar Acción',
+		areYouSure: '¿Estás seguro de que deseas',
+		confirm: 'Confirmar'
 	},
 	privacy: {
 		title: 'Información sobre Protección de Datos',
@@ -99,7 +108,13 @@ export default {
 		subtitle: 'Control Horario - Shift',
 		tabs: {
 			timeRecords: 'Registros de Tiempo',
-			users: 'Usuarios'
+			users: 'Usuarios',
+			timeline: 'Línea de Tiempo'
+		},
+		viewModes: {
+			summary: 'Resumen',
+			daily: 'Por Días',
+			dailyView: 'Vista por Días'
 		},
 		filters: {
 			searchFilters: 'Filtros de Búsqueda',
@@ -111,7 +126,47 @@ export default {
 			eventType: 'Tipo de Evento:',
 			allEvents: 'Todos los eventos',
 			domain: 'Dominio:',
-			allDomains: 'Todos los dominios'
+			allDomains: 'Todos los dominios',
+			noFilter: 'Sin filtro'
+		},
+		export: {
+			export: 'Exportar',
+			exportCSV: 'Exportar CSV',
+			exportXLSX: 'Exportar XLSX',
+			exportPDF: 'Exportar PDF',
+			exportReport: 'Exportar Informe',
+			generalReport: 'Informe General de Registro de Horas',
+			userReport: 'INFORME DE REGISTRO DE HORAS',
+			hourReport: 'Informe de Registro de Horas',
+			generateDate: 'Fecha de generación',
+			period: 'Período',
+			start: 'Inicio',
+			present: 'Presente'
+		},
+		summary: {
+			generalSummary: 'RESUMEN GENERAL',
+			dailyBreakdown: 'Desglose por Días',
+			detailedRecords: 'Registros Detallados',
+			daysWorked: 'Días trabajados',
+			totalHours: 'Horas totales',
+			breakTime: 'Tiempo de descanso',
+			totalTime: 'Tiempo total',
+			numRecords: 'Núm. registros',
+			summary: 'Resumen',
+			daily: 'Por Días',
+			generalSummaryHeading: 'Resumen General',
+			dailyBreakdownHeading: 'Desglose por Días'
+		},
+		report: {
+			eventType: 'Tipo de evento',
+			source: 'Origen',
+			userAgent: 'User Agent',
+			ip: 'IP',
+			unknownUser: 'Usuario desconocido',
+			noData: 'Sin datos',
+			close: 'Cerrar',
+			viewTimeline: 'Vista Timeline',
+			viewDaily: 'Vista por Días'
 		},
 		events: {
 			loadingRecords: 'Cargando registros...',
@@ -139,15 +194,31 @@ export default {
 				domain: 'Dominio',
 				activity: 'Actividad (30 días)',
 				lastRecord: 'Último Registro',
-				registered: 'Registrado'
+				registered: 'Registrado',
+				avatarId: 'Avatar ID',
+				domainId: 'ID Dominio',
+				date: 'Fecha',
+				firstEntry: 'Primera Entrada',
+				lastExit: 'Última Salida',
+				hoursWorked: 'Horas trabajadas',
+				breakTime: 'Tiempo descanso',
+				total: 'Total',
+				records: 'Registros',
+				day: 'Día',
+				time: 'Hora',
+				start: 'Inicio',
+				end: 'Fin',
+				state: 'Estado'
 			},
 			roles: {
 				admin: 'Administrador',
-				worker: 'Trabajador'
+				worker: 'Trabajador',
+				role: 'Rol'
 			},
 			status: {
 				active: 'Activo',
-				inactive: 'Inactivo'
+				inactive: 'Inactivo',
+				noStatus: 'Sin Estado'
 			},
 			stats: {
 				total: 'Total:',
@@ -155,19 +226,28 @@ export default {
 				clockOuts: 'Salidas:'
 			},
 			noRecords: 'Sin registros',
-			loading: 'Cargando...'
+			loading: 'Cargando...',
+			searchPlaceholder: 'Buscar por nombre o email...',
+			viewDetails: 'Ver detalle',
+			userDetails: 'Datos del Usuario',
+			fullHistory: 'Historial Completo'
 		}
 	},
 	history: {
 		title: 'Historial de Registros de Tiempo',
+		modalTitle: 'Registro de Jornadas',
 		from: 'Desde:',
 		to: 'Hasta:',
+		today: 'Hoy',
 		loadingRecords: 'Cargando registros...',
 		noRecords: 'No se encontraron registros en el período seleccionado',
+		noRecordsForDate: 'No hay registros para esta fecha',
 		totalRecords: 'Total de registros:',
 		worker: 'Trabajador:',
 		domain: 'Dominio:',
-		weeklySummary: 'Resumen semanal de horas'
+		weeklySummary: 'Resumen semanal de horas',
+		timeWorked: 'Tiempo trabajado',
+		breakTime: 'Tiempo de descanso'
 	},
 	events: {
 		clockIn: 'Fichar Entrada',
